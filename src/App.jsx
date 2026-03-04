@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { initializeApp } from "firebase/app";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAB269a1r0ki9YBCo8oqRmXieV6rXKgyno",
@@ -169,8 +169,22 @@ export default function App(){
   const [search,sS]=useState(""); const [filt,sFilt]=useState({country:"",status:"",school:"",service:"",year:""});
   const [now,sN]=useState(new Date()); const [tab,sTab]=useState("applications");
   const [menuOpen,sMenu]=useState(false);
+  const [namePrompt,sNamePrompt]=useState(false);
+  const [nameInput,sNameInput]=useState("");
+  const [savingName,sSavingName]=useState(false);
 
-  useEffect(()=>{ const u=onAuthStateChanged(auth,u=>{sU(u);sR(true);}); return u; },[]);
+  useEffect(()=>{ const u=onAuthStateChanged(auth,u=>{ sU(u); sR(true); if(u&&!u.displayName) sNamePrompt(true); }); return u; },[]);
+
+  const saveName = async () => {
+    if(!nameInput.trim()) return;
+    sSavingName(true);
+    try {
+      await updateProfile(auth.currentUser, { displayName: nameInput.trim() });
+      sU({...auth.currentUser, displayName: nameInput.trim()});
+      sNamePrompt(false);
+    } catch(e) { console.error(e); }
+    sSavingName(false);
+  };
   useEffect(()=>{ const t=setInterval(()=>sN(new Date()),1000); return()=>clearInterval(t); },[]);
 
   // Set favicon
@@ -202,7 +216,7 @@ export default function App(){
   if(!ready) return null;
   if(!user)  return <Login/>;
 
-  const nm=user.displayName || user.email.split("@")[0];
+  const nm=(user.displayName||auth.currentUser?.displayName||user.email.split("@")[0]);
   const hr=now.getHours();
   const gr=hr<12?"Good morning":hr<17?"Good afternoon":"Good evening";
   const fT=d=>d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
