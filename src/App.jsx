@@ -550,26 +550,17 @@ export default function App(){
               </tbody>
             </table>
           </div>
+          </div>
         </div>}
 
       </div>
     </div>
-
     {namePrompt&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial,sans-serif"}}>
       <div style={{background:"#0f1923",border:"1px solid #1e2d3d",borderRadius:14,padding:"36px 32px",width:380,maxWidth:"90vw"}}>
         <div style={{fontSize:22,fontWeight:700,color:"#f9fafb",marginBottom:8}}>Welcome! 👋</div>
         <div style={{fontSize:14,color:"#6b7280",marginBottom:24}}>What's your name? This is how the dashboard will greet you.</div>
-        <input
-          value={nameInput}
-          onChange={e=>sNameInput(e.target.value)}
-          onKeyDown={e=>e.key==="Enter"&&saveName()}
-          placeholder="e.g. Ayomikun"
-          autoFocus
-          style={{width:"100%",background:"#060d14",border:"1px solid #1e2d3d",borderRadius:6,padding:"11px 14px",color:"#f9fafb",fontSize:15,outline:"none",boxSizing:"border-box",fontFamily:"Arial,sans-serif",marginBottom:16}}
-        />
-        <button onClick={saveName} disabled={savingName||!nameInput.trim()} style={{width:"100%",background:"#1565F5",border:"none",borderRadius:6,padding:"13px",color:"#fff",fontWeight:700,fontSize:15,cursor:savingName||!nameInput.trim()?"not-allowed":"pointer",opacity:savingName||!nameInput.trim()?0.6:1,fontFamily:"Arial,sans-serif"}}>
-          {savingName?"Saving...":"Save my name"}
-        </button>
+        <input value={nameInput} onChange={e=>sNameInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveName()} placeholder="e.g. Ayomikun" autoFocus style={{width:"100%",background:"#060d14",border:"1px solid #1e2d3d",borderRadius:6,padding:"11px 14px",color:"#f9fafb",fontSize:15,outline:"none",boxSizing:"border-box",fontFamily:"Arial,sans-serif",marginBottom:16}}/>
+        <button onClick={saveName} disabled={savingName||!nameInput.trim()} style={{width:"100%",background:"#1565F5",border:"none",borderRadius:6,padding:"13px",color:"#fff",fontWeight:700,fontSize:15,cursor:savingName||!nameInput.trim()?"not-allowed":"pointer",opacity:savingName||!nameInput.trim()?0.6:1,fontFamily:"Arial,sans-serif"}}>{savingName?"Saving...":"Save my name"}</button>
       </div>
     </div>}
   </>;
