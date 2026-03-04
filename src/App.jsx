@@ -207,7 +207,32 @@ export default function App(){
       });
       const appliRows = raw.applications.slice(2).filter(r=>r[0]&&r[1]);
       const applications = appliRows.map(r=>({
-        clientName:String(r[0]||"").trim(), university:String(r[1]||"").trim(), country:String(r[2]||"").trim(), programme:String(r[3]||"").trim(), period:String(r[4]||"").trim(), appFee:String(r[5]||"Free").trim(), tuition:String(r[6]||"").trim(), ourProgress:String(r[7]||"").trim(), schoolStatus:String(r[8]||"").trim(), notes:String(r[9]||"").trim(),
+        clientName:String(r[0]||"").trim(), university:String(r[1]||"").trim(), country:String(r[2]||"").trim(), programme:String(r[3]||"").trim(), period:(()=>{ const v=String(r[4]||"").trim(); if(!v) return "";
+  // Raw ISO timestamp from Sheets
+  if(v.includes("T00:00:00")){ const d=new Date(v); if(!isNaN(d)) return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); }
+  // Helper to parse a date fragment with optional year
+  const parseEnd = (s) => {
+    const yr = new Date().getFullYear();
+    // "Jan 15 2026" or "Jan 15"
+    const m1 = s.trim().match(/^([A-Za-z]+)\s+(\d+)\s*(20\d\d)?$/);
+    if(m1){ const d=new Date(`${m1[1]} ${m1[2]} ${m1[3]||yr}`); if(!isNaN(d)) return d; }
+    // "Mar 2026" or "Dec 2026"
+    const m2 = s.trim().match(/^([A-Za-z]+)\s+(20\d\d)$/);
+    if(m2){ const d=new Date(`${m2[1]} 1 ${m2[2]}`); d.setMonth(d.getMonth()+1); d.setDate(0); if(!isNaN(d)) return d; }
+    // "Jul" alone
+    const m3 = s.trim().match(/^([A-Za-z]+)$/);
+    if(m3){ const d=new Date(`${m3[1]} 1 ${yr}`); if(!isNaN(d)){ d.setMonth(d.getMonth()+1); d.setDate(0); return d; } }
+    return null;
+  };
+  // "Till Mar 31" / "Till Apr 30"
+  const till = v.match(/^Till\s+(.+)$/i);
+  if(till){ const d=parseEnd(till[1]); if(d) return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); }
+  // Range with dash — take the part after the last " - "
+  if(v.includes(" - ")){ const parts=v.split(" - "); const d=parseEnd(parts[parts.length-1]); if(d) return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); }
+  // Single value
+  const d=parseEnd(v); if(d) return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+  return v;
+})(), appFee:String(r[5]||"Free").trim(), tuition:String(r[6]||"").trim(), ourProgress:String(r[7]||"").trim(), schoolStatus:String(r[8]||"").trim(), notes:String(r[9]||"").trim(),
       }));
       const linked = applications.map(ap=>({...ap, clientId:(applicants.find(a=>a.name.toLowerCase()===ap.clientName.toLowerCase())||{}).id||null}));
       sD({applicants,applications:linked}); sL(false);
