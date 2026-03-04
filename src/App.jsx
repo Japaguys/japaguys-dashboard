@@ -148,7 +148,7 @@ function Login(){
     <div style={{minHeight:"100vh",background:BG,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial,sans-serif"}}>
       <div style={{width:420}}>
         <div style={{textAlign:"center",marginBottom:40}}>
-          <img src={LOGO} alt="JapaGuys" style={{height:44,marginBottom:24}}/>
+          <img src={LOGO} alt="JapaGuys" style={{height:44,marginBottom:24,mixBlendMode:"screen"}}/>
           <div style={{color:"#6b7280",fontSize:13}}>Operations Dashboard — Internal Access Only</div>
         </div>
         <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:12,padding:"36px 32px"}}>
@@ -174,6 +174,7 @@ export default function App(){
   const [savingName,sSavingName]=useState(false);
 
   useEffect(()=>{ const u=onAuthStateChanged(auth,u=>{ sU(u); sR(true); if(u&&!u.displayName) sNamePrompt(true); }); return u; },[]);
+  useEffect(()=>{ if(user&&!user.displayName&&!auth.currentUser?.displayName) sNamePrompt(true); },[user]);
 
   const saveName = async () => {
     if(!nameInput.trim()) return;
@@ -279,7 +280,7 @@ export default function App(){
   const TD = {padding:"12px 16px",fontSize:13,color:"#d1d5db",borderBottom:`1px solid ${BORDER}`,verticalAlign:"middle"};
 
   return <>
-    <style>{`@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box;margin:0;padding:0}html,body{max-width:100%;overflow-x:hidden}body{background:${BG};font-family:Arial,sans-serif}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:${BG}}::-webkit-scrollbar-thumb{background:${BORDER};border-radius:3px}input::placeholder{color:#374151}select option{background:#0f1923}@media(max-width:768px){.hamburger{display:flex!important}.sidebar{transform:translateX(-100%);transition:transform 0.25s}.sidebar.open{transform:translateX(0)}.overlay{display:block!important}.main-content{margin-left:0!important;padding:64px 12px 20px!important;width:100%!important;max-width:100vw!important;overflow-x:hidden!important;box-sizing:border-box!important}.metric-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}.chart-grid{grid-template-columns:1fr!important}.client-grid{grid-template-columns:1fr!important}.filter-row{flex-direction:column!important}.filter-row select,.filter-row input{width:100%!important}table{font-size:11px;display:block;overflow-x:auto;white-space:nowrap}table td,table th{padding:8px 6px!important}.topbar-right{display:none!important}.greeting-bar{margin-bottom:16px!important}}`}</style>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box;margin:0;padding:0}html,body{max-width:100%;overflow-x:hidden}body{background:${BG};font-family:Arial,sans-serif}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:${BG}}::-webkit-scrollbar-thumb{background:${BORDER};border-radius:3px}input::placeholder{color:#374151}select option{background:#0f1923}.hamburger{display:none!important}@media(max-width:768px){.hamburger{display:flex!important}.sidebar{transform:translateX(-100%);transition:transform 0.25s}.sidebar.open{transform:translateX(0)}.overlay{display:block!important}.main-content{margin-left:0!important;padding:64px 12px 20px!important;width:100%!important;max-width:100vw!important;overflow-x:hidden!important;box-sizing:border-box!important}.metric-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}.chart-grid{grid-template-columns:1fr!important}.client-grid{grid-template-columns:1fr!important}.filter-row{flex-direction:column!important}.filter-row select,.filter-row input{width:100%!important}table{font-size:11px;display:block;overflow-x:auto;white-space:nowrap}table td,table th{padding:8px 6px!important}.topbar-right{display:none!important}.greeting-bar{margin-bottom:16px!important}}`}</style>
     <div style={{display:"flex",minHeight:"100vh",fontFamily:"Arial,sans-serif",background:BG,color:"#f9fafb"}}>
       {/* MOBILE OVERLAY */}
       <div className="overlay" onClick={()=>sMenu(false)} style={{display:"none",position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:99}}/>
@@ -287,7 +288,7 @@ export default function App(){
       {/* SIDEBAR */}
       <div className={`sidebar${menuOpen?" open":""}`} style={{width:220,background:"#0a1520",borderRight:`1px solid ${BORDER}`,display:"flex",flexDirection:"column",padding:"24px 0",position:"fixed",height:"100vh",zIndex:100}}>
         <div style={{padding:"0 20px 28px"}}>
-          <img src={LOGO} alt="JapaGuys" style={{height:32,marginBottom:4}}/>
+          <img src={LOGO} alt="JapaGuys" style={{height:32,marginBottom:4,mixBlendMode:"screen"}}/>
           <div style={{fontSize:11,color:"#4b5563",marginTop:6,letterSpacing:"0.05em"}}>Operations Dashboard</div>
         </div>
         {[{id:"summary",icon:"⊞",label:"Overview"},{id:"clients",icon:"👥",label:"All Clients"},{id:"countries",icon:"🌍",label:"Current Openings"}].map(item=>(
