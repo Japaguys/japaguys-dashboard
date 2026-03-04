@@ -202,7 +202,7 @@ export default function App(){
   if(!ready) return null;
   if(!user)  return <Login/>;
 
-  const nm=user.email.split("@")[0];
+  const nm=user.displayName || user.email.split("@")[0];
   const hr=now.getHours();
   const gr=hr<12?"Good morning":hr<17?"Good afternoon":"Good evening";
   const fT=d=>d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
