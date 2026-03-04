@@ -207,32 +207,7 @@ export default function App(){
       });
       const appliRows = raw.applications.slice(2).filter(r=>r[0]&&r[1]);
       const applications = appliRows.map(r=>({
-        clientName:String(r[0]||"").trim(), university:String(r[1]||"").trim(), country:String(r[2]||"").trim(), programme:String(r[3]||"").trim(), period:(()=>{ const v=String(r[4]||"").trim(); if(!v) return "";
-  // Raw ISO timestamp from Sheets
-  if(v.includes("T00:00:00")){ const d=new Date(v); if(!isNaN(d)) return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); }
-  // Helper to parse a date fragment with optional year
-  const parseEnd = (s) => {
-    const yr = new Date().getFullYear();
-    // "Jan 15 2026" or "Jan 15"
-    const m1 = s.trim().match(/^([A-Za-z]+)\s+(\d+)\s*(20\d\d)?$/);
-    if(m1){ const d=new Date(`${m1[1]} ${m1[2]} ${m1[3]||yr}`); if(!isNaN(d)) return d; }
-    // "Mar 2026" or "Dec 2026"
-    const m2 = s.trim().match(/^([A-Za-z]+)\s+(20\d\d)$/);
-    if(m2){ const d=new Date(`${m2[1]} 1 ${m2[2]}`); d.setMonth(d.getMonth()+1); d.setDate(0); if(!isNaN(d)) return d; }
-    // "Jul" alone
-    const m3 = s.trim().match(/^([A-Za-z]+)$/);
-    if(m3){ const d=new Date(`${m3[1]} 1 ${yr}`); if(!isNaN(d)){ d.setMonth(d.getMonth()+1); d.setDate(0); return d; } }
-    return null;
-  };
-  // "Till Mar 31" / "Till Apr 30"
-  const till = v.match(/^Till\s+(.+)$/i);
-  if(till){ const d=parseEnd(till[1]); if(d) return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); }
-  // Range with dash — take the part after the last " - "
-  if(v.includes(" - ")){ const parts=v.split(" - "); const d=parseEnd(parts[parts.length-1]); if(d) return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); }
-  // Single value
-  const d=parseEnd(v); if(d) return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
-  return v;
-})(), appFee:String(r[5]||"Free").trim(), tuition:String(r[6]||"").trim(), ourProgress:String(r[7]||"").trim(), schoolStatus:String(r[8]||"").trim(), notes:String(r[9]||"").trim(),
+        clientName:String(r[0]||"").trim(), university:String(r[1]||"").trim(), country:String(r[2]||"").trim(), programme:String(r[3]||"").trim(), period:String(r[4]||'').trim(), appFee:String(r[5]||"Free").trim(), tuition:String(r[6]||"").trim(), ourProgress:String(r[7]||"").trim(), schoolStatus:String(r[8]||"").trim(), notes:String(r[9]||"").trim(),
       }));
       const linked = applications.map(ap=>({...ap, clientId:(applicants.find(a=>a.name.toLowerCase()===ap.clientName.toLowerCase())||{}).id||null}));
       sD({applicants,applications:linked}); sL(false);
@@ -275,7 +250,7 @@ export default function App(){
   });
   const countries=Object.entries(cMap).sort((a,b)=>b[1].total-a[1].total);
 
-  // Countries & Fees — only active deadlines, deduplicated by university
+  // Countries & Fees — only active deadlines, deduplicated by university, sorted by nearest deadline
   const seen = new Set();
   const activeSchools = applications
     .filter(a => isActive(a.period))
@@ -284,7 +259,24 @@ export default function App(){
       if(seen.has(key)) return false;
       seen.add(key); return true;
     })
-    .sort((a,b)=>a.country.localeCompare(b.country));
+    .map(a => ({...a, _deadline: parseDeadline(a.period)}))
+    .sort((a,b)=>{
+      if(!a._deadline && !b._deadline) return 0;
+      if(!a._deadline) return 1;
+      if(!b._deadline) return -1;
+      return a._deadline - b._deadline;
+    });
+
+  // Format deadline date for display
+  const fmtDeadline = (period) => {
+    if(!period) return "—";
+    const v = period.trim();
+    // Raw ISO timestamp
+    if(v.includes("T00:00:00")){ const d=new Date(v); if(!isNaN(d)) return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); }
+    const d = parseDeadline(v);
+    if(d) return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+    return v;
+  };
 
   const allC=[...new Set(applications.map(a=>a.country?.trim()).filter(Boolean))].sort();
   const allSt=[...new Set(applications.map(a=>a.ourProgress).filter(Boolean))].sort();
@@ -540,7 +532,7 @@ export default function App(){
                     <div style={{color:s.appFee==="Free"?"#34d399":"#d1d5db",fontWeight:s.appFee==="Free"?700:400}}>{s.appFee||"—"}</div>
                   </div>
                 </div>
-                <div style={{marginTop:8,fontSize:12,color:"#9ca3af"}}>📅 {s.period||"—"}</div>
+                <div style={{marginTop:8,fontSize:12,color:"#9ca3af"}}>📅 {fmtDeadline(s.period)}</div>
               </div>
             ))}
           </div>
@@ -566,7 +558,7 @@ export default function App(){
                     <td style={{...TD}}><span style={{background:"#0d2d6b",color:"#93c5fd",padding:"2px 8px",borderRadius:4,fontSize:12,fontWeight:600}}>{s.country}</span></td>
                     <td style={{...TD,color:s.tuition==="Fully Funded"||s.tuition==="Tuition Free"?"#34d399":"#d1d5db",fontWeight:s.tuition==="Fully Funded"||s.tuition==="Tuition Free"?700:400}}>{s.tuition||"—"}</td>
                     <td style={{...TD,color:s.appFee==="Free"?"#34d399":"#d1d5db",fontWeight:s.appFee==="Free"?700:400}}>{s.appFee||"—"}</td>
-                    <td style={{...TD,color:"#9ca3af",fontSize:12}}>{s.period||"—"}</td>
+                    <td style={{...TD,color:"#9ca3af",fontSize:12}}>{fmtDeadline(s.period)}</td>
                   </tr>
                 ))}
                 {activeSchools.length===0&&(
