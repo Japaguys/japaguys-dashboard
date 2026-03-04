@@ -168,6 +168,7 @@ export default function App(){
   const [view,sV]=useState("summary"); const [sel,sSel]=useState(null);
   const [search,sS]=useState(""); const [filt,sFilt]=useState({country:"",status:"",school:"",service:"",year:""});
   const [now,sN]=useState(new Date()); const [tab,sTab]=useState("applications");
+  const [menuOpen,sMenu]=useState(false);
 
   useEffect(()=>{ const u=onAuthStateChanged(auth,u=>{sU(u);sR(true);}); return u; },[]);
   useEffect(()=>{ const t=setInterval(()=>sN(new Date()),1000); return()=>clearInterval(t); },[]);
@@ -264,17 +265,19 @@ export default function App(){
   const TD = {padding:"12px 16px",fontSize:13,color:"#d1d5db",borderBottom:`1px solid ${BORDER}`,verticalAlign:"middle"};
 
   return <>
-    <style>{`@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box;margin:0;padding:0}body{background:${BG};font-family:Arial,sans-serif}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:${BG}}::-webkit-scrollbar-thumb{background:${BORDER};border-radius:3px}input::placeholder{color:#374151}select option{background:#0f1923}`}</style>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box;margin:0;padding:0}body{background:${BG};font-family:Arial,sans-serif}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:${BG}}::-webkit-scrollbar-thumb{background:${BORDER};border-radius:3px}input::placeholder{color:#374151}select option{background:#0f1923}@media(max-width:768px){.hamburger{display:flex!important}.sidebar{transform:translateX(-100%);transition:transform 0.25s}.sidebar.open{transform:translateX(0)}.overlay{display:block!important}.main-content{margin-left:0!important;padding:20px 16px!important}.top-bar{flex-direction:column;gap:8px}.metric-grid{grid-template-columns:repeat(2,1fr)!important}.chart-grid{grid-template-columns:1fr!important}.client-grid{grid-template-columns:1fr!important}.filter-row{flex-direction:column}.filter-row select,.filter-row input{width:100%!important}table{font-size:11px}table td,table th{padding:8px 6px!important}}`}</style>
     <div style={{display:"flex",minHeight:"100vh",fontFamily:"Arial,sans-serif",background:BG,color:"#f9fafb"}}>
+      {/* MOBILE OVERLAY */}
+      <div className="overlay" onClick={()=>sMenu(false)} style={{display:"none",position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:99}}/>
 
       {/* SIDEBAR */}
-      <div style={{width:220,background:"#0a1520",borderRight:`1px solid ${BORDER}`,display:"flex",flexDirection:"column",padding:"24px 0",position:"fixed",height:"100vh",zIndex:100}}>
+      <div className={`sidebar${menuOpen?" open":""}`} style={{width:220,background:"#0a1520",borderRight:`1px solid ${BORDER}`,display:"flex",flexDirection:"column",padding:"24px 0",position:"fixed",height:"100vh",zIndex:100}}>
         <div style={{padding:"0 20px 28px"}}>
           <img src={LOGO} alt="JapaGuys" style={{height:32,marginBottom:4}}/>
           <div style={{fontSize:11,color:"#4b5563",marginTop:6,letterSpacing:"0.05em"}}>Operations Dashboard</div>
         </div>
         {[{id:"summary",icon:"⊞",label:"Overview"},{id:"clients",icon:"👥",label:"All Clients"},{id:"countries",icon:"🌍",label:"Current Openings"}].map(item=>(
-          <button key={item.id} onClick={()=>{sV(item.id);sSel(null);sS("");}}
+          <button key={item.id} onClick={()=>{sV(item.id);sSel(null);sS("");sMenu(false);}}
             style={{display:"flex",alignItems:"center",gap:10,padding:"11px 20px",background:navActive(item.id)?"#1a2740":"none",border:"none",borderLeft:navActive(item.id)?`3px solid ${BLUE}`:"3px solid transparent",color:navActive(item.id)?"#f9fafb":"#6b7280",cursor:"pointer",fontSize:13,fontWeight:navActive(item.id)?700:400,fontFamily:"Arial,sans-serif",textAlign:"left",width:"100%",letterSpacing:"0.01em"}}>
             <span style={{fontSize:14}}>{item.icon}</span>{item.label}
             {item.id==="clients"&&<span style={{marginLeft:"auto",fontSize:11,background:"#0d2d6b",color:"#93c5fd",padding:"1px 7px",borderRadius:10,fontWeight:700}}>{tc}</span>}
@@ -291,7 +294,13 @@ export default function App(){
       </div>
 
       {/* MAIN */}
-      <div style={{marginLeft:220,flex:1,padding:"32px 40px",minHeight:"100vh"}}>
+      <div className="main-content" style={{marginLeft:220,flex:1,padding:"32px 40px",minHeight:"100vh"}}>
+        {/* HAMBURGER */}
+        <button onClick={()=>sMenu(o=>!o)} style={{display:"flex",position:"fixed",top:16,left:16,zIndex:200,background:BLUE,border:"none",borderRadius:8,padding:"10px 12px",cursor:"pointer",flexDirection:"column",gap:5}} className="hamburger">
+          <span style={{display:"block",width:22,height:2,background:"#fff",borderRadius:2}}/>
+          <span style={{display:"block",width:22,height:2,background:"#fff",borderRadius:2}}/>
+          <span style={{display:"block",width:22,height:2,background:"#fff",borderRadius:2}}/>
+        </button>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:32,flexWrap:"wrap",gap:16}}>
           <div>
             {view==="client"&&sel&&<div style={{fontSize:12,marginBottom:6}}>
@@ -310,7 +319,7 @@ export default function App(){
 
         {/* ── SUMMARY ── */}
         {view==="summary"&&<div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(148px,1fr))",gap:12,marginBottom:28}}>
+          <div className="metric-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(148px,1fr))",gap:12,marginBottom:28}}>
             <MC label="Total Clients"      value={tc}             accent={BLUE}/>
             <MC label="Total Applications" value={tot}            accent="#3b82f6"/>
             <MC label="Submitted"          value={sub}            accent="#10b981"/>
@@ -321,7 +330,7 @@ export default function App(){
             <MC label="Denied"             value={den}            accent="#ef4444"/>
             <MC label="Outstanding"        value={"₦"+fmtNum(owed)} accent={BLUE} sub={"₦"+owed.toLocaleString()}/>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:24}}>
+          <div className="chart-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:24}}>
             <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:22}}>
               <div style={{fontWeight:700,color:"#f9fafb",marginBottom:18,fontSize:14,letterSpacing:"0.02em"}}>Our Progress</div>
               <PB label="Submitted"           val={sub} total={tot} color={BLUE}/>
@@ -358,7 +367,7 @@ export default function App(){
         {view==="clients"&&<div>
           <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"18px 22px",marginBottom:20}}>
             <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12,fontWeight:600}}>Search & Filter</div>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            <div className="filter-row" style={{display:"flex",gap:8,flexWrap:"wrap"}}>
               <input placeholder="Search name or field..." value={search} onChange={e=>sS(e.target.value)} style={{...SI,width:230,padding:"9px 14px"}}/>
               <select value={filt.country} onChange={e=>sFilt(f=>({...f,country:e.target.value}))} style={SI}><option value="">All Countries</option>{allC.map(c=><option key={c}>{c}</option>)}</select>
               <select value={filt.status}  onChange={e=>sFilt(f=>({...f,status:e.target.value}))}  style={SI}><option value="">All Progress</option>{allSt.map(s=><option key={s}>{s}</option>)}</select>
@@ -369,7 +378,7 @@ export default function App(){
             </div>
             <div style={{marginTop:10,fontSize:12,color:"#4b5563"}}>Showing <strong style={{color:"#f9fafb"}}>{filtered.length}</strong> of {tc} clients</div>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:12}}>
+          <div className="client-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:12}}>
             {filtered.map(client=>{
               const ca=applications.filter(a=>a.clientId===client.id);
               const hA=ca.some(a=>a.schoolStatus==="Admission Granted");
