@@ -53,77 +53,42 @@ const parseDeadline = (period) => {
   if(!period) return null;
   const p = period.trim();
   const now = new Date();
-  const yr  = now.getFullYear();
+  const yr = now.getFullYear();
 
-  // "Till Mar 31", "Till Apr 30" etc
-  const tillMatch = p.match(/^Till\s+(\w+)\s+(\d+)$/i);
-  if(tillMatch) {
-    const d = new Date(`${tillMatch[1]} ${tillMatch[2]} ${yr}`);
-    if(!isNaN(d)) return d;
+  // Helper: parse "Mon DD YYYY", "Mon DD", "Mon YYYY", "Mon" fragments
+  const parseFragment = (s, fallbackYr) => {
+    s = s.trim();
+    // "Nov 16 2025" or "Jan 15 2026"
+    let m = s.match(/^([A-Za-z]+)\s+(\d{1,2})\s+(20\d\d)$/);
+    if(m){ const d=new Date(`${m[1]} ${m[2]} ${m[3]}`); if(!isNaN(d)) return d; }
+    // "Nov 16" or "Jan 15" — no year
+    m = s.match(/^([A-Za-z]+)\s+(\d{1,2})$/);
+    if(m){ const d=new Date(`${m[1]} ${m[2]} ${fallbackYr||yr}`); if(!isNaN(d)) return d; }
+    // "Mar 2026" — month+year, use last day of month
+    m = s.match(/^([A-Za-z]+)\s+(20\d\d)$/);
+    if(m){ const d=new Date(`${m[1]} 1 ${m[2]}`); if(!isNaN(d)){ d.setMonth(d.getMonth()+1); d.setDate(0); return d; } }
+    // "Jul 2026" etc same
+    // "Mar" alone — month only
+    m = s.match(/^([A-Za-z]+)$/);
+    if(m){ const d=new Date(`${m[1]} 1 ${fallbackYr||yr}`); if(!isNaN(d)){ d.setMonth(d.getMonth()+1); d.setDate(0); return d; } }
+    return null;
+  };
+
+  // "Till Mar 31" / "Till May 6" / "Till Jul 31"
+  let m = p.match(/^Till\s+(.+)$/i);
+  if(m){ const d=parseFragment(m[1]); if(d) return d; }
+
+  // Any range with " - " — always take the END part
+  if(p.includes(' - ')){
+    const parts = p.split(' - ');
+    const endPart = parts[parts.length-1].trim();
+    const d = parseFragment(endPart);
+    if(d) return d;
   }
 
-  // "Mar 2026", "Dec 2026", "Feb 2026" etc — single month+year
-  const myMatch = p.match(/^(\w+)\s+(20\d\d)$/i);
-  if(myMatch) {
-    const d = new Date(`${myMatch[1]} 1 ${myMatch[2]}`);
-    if(!isNaN(d)){ d.setMonth(d.getMonth()+1); d.setDate(0); return d; }
-  }
-
-  // "Aug 2025 - Mar 2026" — take end
-  const rangeYrMatch = p.match(/(\w+)\s+20\d\d\s*-\s*(\w+)\s+(20\d\d)/i);
-  if(rangeYrMatch) {
-    const d = new Date(`${rangeYrMatch[2]} 1 ${rangeYrMatch[3]}`);
-    if(!isNaN(d)){ d.setMonth(d.getMonth()+1); d.setDate(0); return d; }
-  }
-
-  // "Oct 2025 - Feb 2026"
-  const rangeYrMatch2 = p.match(/(\w+\s+20\d\d)\s*-\s*(\w+\s+20\d\d)/i);
-  if(rangeYrMatch2) {
-    const d = new Date(rangeYrMatch2[2] + " 1");
-    if(!isNaN(d)){ d.setMonth(d.getMonth()+1); d.setDate(0); return d; }
-  }
-
-  // "Jan 10 - Feb 20", "Mar 10 - Mar 18" — no year, assume current or next year
-  const rangeMatch = p.match(/(\w+)\s+\d+\s*-\s*(\w+)\s+(\d+)$/i);
-  if(rangeMatch) {
-    let d = new Date(`${rangeMatch[2]} ${rangeMatch[3]} ${yr}`);
-    if(!isNaN(d)){
-      if(d < now) d = new Date(`${rangeMatch[2]} ${rangeMatch[3]} ${yr+1}`);
-      return d;
-    }
-  }
-
-  // "Apr 16", "Jul 31", "Mar 10" — day only, no year
-  const dayMatch = p.match(/^(\w+)\s+(\d+)$/i);
-  if(dayMatch) {
-    let d = new Date(`${dayMatch[1]} ${dayMatch[2]} ${yr}`);
-    if(!isNaN(d)){
-      if(d < now) d = new Date(`${dayMatch[1]} ${dayMatch[2]} ${yr+1}`);
-      return d;
-    }
-  }
-
-  // "Aug - Oct", "Mar - Jun", "Nov - Jul" — month range no year, use end month
-  const moRangeMatch = p.match(/^\w+\s*-\s*(\w+)$/i);
-  if(moRangeMatch) {
-    let d = new Date(`${moRangeMatch[1]} 1 ${yr}`);
-    if(!isNaN(d)){
-      d.setMonth(d.getMonth()+1); d.setDate(0);
-      if(d < now){ d = new Date(`${moRangeMatch[1]} 1 ${yr+1}`); d.setMonth(d.getMonth()+1); d.setDate(0); }
-      return d;
-    }
-  }
-
-  // "Feb 2 - Jul", "Nov - Jul" partial
-  const partMatch = p.match(/^\w+.*-\s*(\w+)$/i);
-  if(partMatch) {
-    let d = new Date(`${partMatch[1]} 1 ${yr}`);
-    if(!isNaN(d)){
-      d.setMonth(d.getMonth()+1); d.setDate(0);
-      if(d < now){ d = new Date(`${partMatch[1]} 1 ${yr+1}`); d.setMonth(d.getMonth()+1); d.setDate(0); }
-      return d;
-    }
-  }
+  // Single value
+  const d = parseFragment(p);
+  if(d) return d;
 
   return null;
 };
@@ -267,11 +232,10 @@ export default function App(){
       return a._deadline - b._deadline;
     });
 
-  // Format deadline date for display
+  // Format deadline date for display — show only the end date
   const fmtDeadline = (period) => {
     if(!period) return "—";
     const v = period.trim();
-    // Raw ISO timestamp
     if(v.includes("T00:00:00")){ const d=new Date(v); if(!isNaN(d)) return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); }
     const d = parseDeadline(v);
     if(d) return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
