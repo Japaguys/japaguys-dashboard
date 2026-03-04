@@ -280,13 +280,13 @@ export default function App(){
   const TD = {padding:"12px 16px",fontSize:13,color:"#d1d5db",borderBottom:`1px solid ${BORDER}`,verticalAlign:"middle"};
 
   return <>
-    <style>{`@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box;margin:0;padding:0}html,body{max-width:100%;overflow-x:hidden}body{background:${BG};font-family:Arial,sans-serif}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:${BG}}::-webkit-scrollbar-thumb{background:${BORDER};border-radius:3px}input::placeholder{color:#374151}select option{background:#0f1923}.hamburger{display:none!important}@media(max-width:768px){.hamburger{display:flex!important}.sidebar{transform:translateX(-100%);transition:transform 0.25s}.sidebar.open{transform:translateX(0)}.overlay{display:block!important}.main-content{margin-left:0!important;padding:64px 12px 20px!important;width:100%!important;max-width:100vw!important;overflow-x:hidden!important;box-sizing:border-box!important}.metric-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}.chart-grid{grid-template-columns:1fr!important}.client-grid{grid-template-columns:1fr!important}.filter-row{flex-direction:column!important}.filter-row select,.filter-row input{width:100%!important}table{font-size:11px;width:100%!important}.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}table td,table th{padding:8px 6px!important;white-space:nowrap}.topbar-right{display:none!important}.greeting-bar{margin-bottom:16px!important}}`}</style>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box;margin:0;padding:0}html,body{max-width:100%;overflow-x:hidden}body{background:${BG};font-family:Arial,sans-serif}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:${BG}}::-webkit-scrollbar-thumb{background:${BORDER};border-radius:3px}input::placeholder{color:#374151}select option{background:#0f1923}.hamburger{display:none!important}@media(max-width:768px){.hamburger{display:flex!important}.sidebar{transform:translateX(-100%);transition:transform 0.25s}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0!important;padding:64px 12px 20px!important;width:100%!important;max-width:100vw!important;overflow-x:hidden!important;box-sizing:border-box!important}.metric-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}.chart-grid{grid-template-columns:1fr!important}.client-grid{grid-template-columns:1fr!important}.filter-row{flex-direction:column!important}.filter-row select,.filter-row input{width:100%!important}table{font-size:11px;width:100%!important}.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}table td,table th{padding:8px 6px!important;white-space:nowrap}.topbar-right{display:none!important}.greeting-bar{margin-bottom:16px!important}.countries-cards{display:flex!important}.countries-table{display:none!important}}`}</style>
     <div style={{display:"flex",minHeight:"100vh",fontFamily:"Arial,sans-serif",background:BG,color:"#f9fafb"}}>
       {/* MOBILE OVERLAY */}
-      <div className="overlay" onClick={()=>sMenu(false)} style={{display:"none",position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:99}}/>
+      {menuOpen&&<div onClick={()=>sMenu(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:150,cursor:"pointer"}}/>}
 
       {/* SIDEBAR */}
-      <div className={`sidebar${menuOpen?" open":""}`} style={{width:220,background:"#0a1520",borderRight:`1px solid ${BORDER}`,display:"flex",flexDirection:"column",padding:"24px 0",position:"fixed",height:"100vh",zIndex:100}}>
+      <div className={`sidebar${menuOpen?" open":""}`} style={{width:220,background:"#0a1520",borderRight:`1px solid ${BORDER}`,display:"flex",flexDirection:"column",padding:"24px 0",position:"fixed",height:"100vh",zIndex:160}}>
         <div style={{padding:"0 20px 28px"}}>
           <img src={LOGO} alt="JapaGuys" style={{height:32,marginBottom:4,mixBlendMode:"screen"}}/>
           <div style={{fontSize:11,color:"#4b5563",marginTop:6,letterSpacing:"0.05em"}}>Operations Dashboard</div>
@@ -499,6 +499,28 @@ export default function App(){
           <div style={{marginBottom:16,fontSize:13,color:"#6b7280"}}>
             Showing <strong style={{color:"#f9fafb"}}>{activeSchools.length}</strong> schools with active deadlines as of today ({new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})})
           </div>
+          {/* MOBILE CARDS VIEW */}
+          <div className="countries-cards" style={{display:"none",flexDirection:"column",gap:12,marginBottom:16}}>
+            {activeSchools.map((s,i)=>(
+              <div key={i} style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"16px"}}>
+                <div style={{fontWeight:700,color:"#f9fafb",fontSize:14,marginBottom:4}}>{s.university}</div>
+                <div style={{marginBottom:10}}><span style={{background:"#0d2d6b",color:"#93c5fd",padding:"2px 8px",borderRadius:4,fontSize:12,fontWeight:600}}>{s.country}</span></div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,fontSize:12}}>
+                  <div style={{background:"#060d14",borderRadius:6,padding:"8px 10px"}}>
+                    <div style={{color:"#6b7280",marginBottom:2,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em"}}>Tuition</div>
+                    <div style={{color:s.tuition==="Fully Funded"||s.tuition==="Tuition Free"?"#34d399":"#d1d5db",fontWeight:s.tuition==="Fully Funded"||s.tuition==="Tuition Free"?700:400}}>{s.tuition||"—"}</div>
+                  </div>
+                  <div style={{background:"#060d14",borderRadius:6,padding:"8px 10px"}}>
+                    <div style={{color:"#6b7280",marginBottom:2,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em"}}>App Fee</div>
+                    <div style={{color:s.appFee==="Free"?"#34d399":"#d1d5db",fontWeight:s.appFee==="Free"?700:400}}>{s.appFee||"—"}</div>
+                  </div>
+                </div>
+                <div style={{marginTop:8,fontSize:12,color:"#9ca3af"}}>📅 {s.period||"—"}</div>
+              </div>
+            ))}
+          </div>
+          {/* DESKTOP TABLE VIEW */}
+          <div className="countries-table">
           <div className="table-wrap" style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,overflow:"hidden"}}>
             <table style={{width:"100%",borderCollapse:"collapse"}}>
               <thead>
@@ -532,5 +554,23 @@ export default function App(){
 
       </div>
     </div>
+
+    {namePrompt&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial,sans-serif"}}>
+      <div style={{background:"#0f1923",border:"1px solid #1e2d3d",borderRadius:14,padding:"36px 32px",width:380,maxWidth:"90vw"}}>
+        <div style={{fontSize:22,fontWeight:700,color:"#f9fafb",marginBottom:8}}>Welcome! 👋</div>
+        <div style={{fontSize:14,color:"#6b7280",marginBottom:24}}>What's your name? This is how the dashboard will greet you.</div>
+        <input
+          value={nameInput}
+          onChange={e=>sNameInput(e.target.value)}
+          onKeyDown={e=>e.key==="Enter"&&saveName()}
+          placeholder="e.g. Ayomikun"
+          autoFocus
+          style={{width:"100%",background:"#060d14",border:"1px solid #1e2d3d",borderRadius:6,padding:"11px 14px",color:"#f9fafb",fontSize:15,outline:"none",boxSizing:"border-box",fontFamily:"Arial,sans-serif",marginBottom:16}}
+        />
+        <button onClick={saveName} disabled={savingName||!nameInput.trim()} style={{width:"100%",background:"#1565F5",border:"none",borderRadius:6,padding:"13px",color:"#fff",fontWeight:700,fontSize:15,cursor:savingName||!nameInput.trim()?"not-allowed":"pointer",opacity:savingName||!nameInput.trim()?0.6:1,fontFamily:"Arial,sans-serif"}}>
+          {savingName?"Saving...":"Save my name"}
+        </button>
+      </div>
+    </div>}
   </>;
 }
