@@ -280,7 +280,7 @@ export default function App(){
   const TD = {padding:"12px 16px",fontSize:13,color:"#d1d5db",borderBottom:`1px solid ${BORDER}`,verticalAlign:"middle"};
 
   return <>
-    <style>{`@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box;margin:0;padding:0}html,body{max-width:100%;overflow-x:hidden}body{background:${BG};font-family:Arial,sans-serif}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:${BG}}::-webkit-scrollbar-thumb{background:${BORDER};border-radius:3px}input::placeholder{color:#374151}select option{background:#0f1923}.hamburger{display:none!important}@media(max-width:768px){.hamburger{display:flex!important}.sidebar{transform:translateX(-100%);transition:transform 0.25s}.sidebar.open{transform:translateX(0)}.overlay{display:block!important}.main-content{margin-left:0!important;padding:64px 12px 20px!important;width:100%!important;max-width:100vw!important;overflow-x:hidden!important;box-sizing:border-box!important}.metric-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}.chart-grid{grid-template-columns:1fr!important}.client-grid{grid-template-columns:1fr!important}.filter-row{flex-direction:column!important}.filter-row select,.filter-row input{width:100%!important}table{font-size:11px;display:block;overflow-x:auto;white-space:nowrap}table td,table th{padding:8px 6px!important}.topbar-right{display:none!important}.greeting-bar{margin-bottom:16px!important}}`}</style>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box;margin:0;padding:0}html,body{max-width:100%;overflow-x:hidden}body{background:${BG};font-family:Arial,sans-serif}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:${BG}}::-webkit-scrollbar-thumb{background:${BORDER};border-radius:3px}input::placeholder{color:#374151}select option{background:#0f1923}.hamburger{display:none!important}@media(max-width:768px){.hamburger{display:flex!important}.sidebar{transform:translateX(-100%);transition:transform 0.25s}.sidebar.open{transform:translateX(0)}.overlay{display:block!important}.main-content{margin-left:0!important;padding:64px 12px 20px!important;width:100%!important;max-width:100vw!important;overflow-x:hidden!important;box-sizing:border-box!important}.metric-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}.chart-grid{grid-template-columns:1fr!important}.client-grid{grid-template-columns:1fr!important}.filter-row{flex-direction:column!important}.filter-row select,.filter-row input{width:100%!important}table{font-size:11px;width:100%!important}.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}table td,table th{padding:8px 6px!important;white-space:nowrap}.topbar-right{display:none!important}.greeting-bar{margin-bottom:16px!important}}`}</style>
     <div style={{display:"flex",minHeight:"100vh",fontFamily:"Arial,sans-serif",background:BG,color:"#f9fafb"}}>
       {/* MOBILE OVERLAY */}
       <div className="overlay" onClick={()=>sMenu(false)} style={{display:"none",position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:99}}/>
@@ -319,7 +319,7 @@ export default function App(){
         <div className="greeting-bar" style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:32,flexWrap:"wrap",gap:8}}>
           <div>
             {view==="client"&&sel&&<div style={{fontSize:12,marginBottom:6}}>
-              <button onClick={()=>{sV("clients");sSel(null);}} style={{background:"none",border:"none",color:"#6b7280",cursor:"pointer",fontSize:12,fontFamily:"Arial,sans-serif"}}>← All Clients</button>
+              <button onClick={()=>{sV("clients");sSel(null);window.scrollTo(0,0);}} style={{background:"none",border:"none",color:"#6b7280",cursor:"pointer",fontSize:12,fontFamily:"Arial,sans-serif"}}>← All Clients</button>
               <span style={{margin:"0 6px",color:"#374151"}}>/</span>
               <span style={{color:BLUE}}>{sel.id}</span>
             </div>}
@@ -443,7 +443,7 @@ export default function App(){
               ))}
             </div>
           </div>
-          <div style={{display:"flex",gap:0,borderBottom:`1px solid ${BORDER}`,marginBottom:22}}>
+          <div style={{display:"flex",gap:0,borderBottom:`1px solid ${BORDER}`,marginBottom:22,overflowX:"auto"}}>
             {[{id:"applications",label:`Applications (${cApps.length})`},{id:"documents",label:`Documents (${sel.documents.length})`},{id:"payment",label:"Payment"}].map(t=>(
               <button key={t.id} onClick={()=>sTab(t.id)} style={{background:"none",border:"none",padding:"10px 20px",cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:tab===t.id?700:400,color:tab===t.id?BLUE:"#6b7280",borderBottom:tab===t.id?`2px solid ${BLUE}`:"2px solid transparent",marginBottom:-1,letterSpacing:"0.01em"}}>{t.label}</button>
             ))}
@@ -499,7 +499,7 @@ export default function App(){
           <div style={{marginBottom:16,fontSize:13,color:"#6b7280"}}>
             Showing <strong style={{color:"#f9fafb"}}>{activeSchools.length}</strong> schools with active deadlines as of today ({new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})})
           </div>
-          <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,overflow:"hidden"}}>
+          <div className="table-wrap" style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,overflow:"hidden"}}>
             <table style={{width:"100%",borderCollapse:"collapse"}}>
               <thead>
                 <tr>
