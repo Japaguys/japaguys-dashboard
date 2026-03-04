@@ -52,6 +52,9 @@ const fmtNum = n => {
 const parseDeadline = (period) => {
   if(!period) return null;
   const p = period.trim();
+
+  // Raw ISO timestamp e.g. "2025-12-01T00:00:00.000Z"
+  if(p.includes("T00:00:00")){ const d=new Date(p); if(!isNaN(d)) return d; }
   const now = new Date();
   const yr = now.getFullYear();
 
