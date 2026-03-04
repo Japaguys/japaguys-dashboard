@@ -265,7 +265,7 @@ export default function App(){
   const TD = {padding:"12px 16px",fontSize:13,color:"#d1d5db",borderBottom:`1px solid ${BORDER}`,verticalAlign:"middle"};
 
   return <>
-    <style>{`@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box;margin:0;padding:0}body{background:${BG};font-family:Arial,sans-serif}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:${BG}}::-webkit-scrollbar-thumb{background:${BORDER};border-radius:3px}input::placeholder{color:#374151}select option{background:#0f1923}@media(max-width:768px){.hamburger{display:flex!important}.sidebar{transform:translateX(-100%);transition:transform 0.25s}.sidebar.open{transform:translateX(0)}.overlay{display:block!important}.main-content{margin-left:0!important;padding:20px 16px!important}.top-bar{flex-direction:column;gap:8px}.metric-grid{grid-template-columns:repeat(2,1fr)!important}.chart-grid{grid-template-columns:1fr!important}.client-grid{grid-template-columns:1fr!important}.filter-row{flex-direction:column}.filter-row select,.filter-row input{width:100%!important}table{font-size:11px}table td,table th{padding:8px 6px!important}}`}</style>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box;margin:0;padding:0}html,body{max-width:100%;overflow-x:hidden}body{background:${BG};font-family:Arial,sans-serif}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:${BG}}::-webkit-scrollbar-thumb{background:${BORDER};border-radius:3px}input::placeholder{color:#374151}select option{background:#0f1923}@media(max-width:768px){.hamburger{display:flex!important}.sidebar{transform:translateX(-100%);transition:transform 0.25s}.sidebar.open{transform:translateX(0)}.overlay{display:block!important}.main-content{margin-left:0!important;padding:64px 12px 20px!important;width:100%!important;max-width:100vw!important;overflow-x:hidden!important;box-sizing:border-box!important}.metric-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}.chart-grid{grid-template-columns:1fr!important}.client-grid{grid-template-columns:1fr!important}.filter-row{flex-direction:column!important}.filter-row select,.filter-row input{width:100%!important}table{font-size:11px;display:block;overflow-x:auto;white-space:nowrap}table td,table th{padding:8px 6px!important}.topbar-right{display:none!important}.greeting-bar{margin-bottom:16px!important}}`}</style>
     <div style={{display:"flex",minHeight:"100vh",fontFamily:"Arial,sans-serif",background:BG,color:"#f9fafb"}}>
       {/* MOBILE OVERLAY */}
       <div className="overlay" onClick={()=>sMenu(false)} style={{display:"none",position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:99}}/>
@@ -296,12 +296,12 @@ export default function App(){
       {/* MAIN */}
       <div className="main-content" style={{marginLeft:220,flex:1,padding:"32px 40px",minHeight:"100vh"}}>
         {/* HAMBURGER */}
-        <button onClick={()=>sMenu(o=>!o)} style={{display:"flex",position:"fixed",top:16,left:16,zIndex:200,background:BLUE,border:"none",borderRadius:8,padding:"10px 12px",cursor:"pointer",flexDirection:"column",gap:5}} className="hamburger">
-          <span style={{display:"block",width:22,height:2,background:"#fff",borderRadius:2}}/>
-          <span style={{display:"block",width:22,height:2,background:"#fff",borderRadius:2}}/>
-          <span style={{display:"block",width:22,height:2,background:"#fff",borderRadius:2}}/>
+        <button onClick={()=>sMenu(o=>!o)} style={{display:"flex",position:"fixed",top:12,left:12,zIndex:201,background:BLUE,border:"none",borderRadius:8,padding:"10px 12px",cursor:"pointer",flexDirection:"column",gap:5,alignItems:"center",justifyContent:"center"}} className="hamburger">
+          <span style={{display:"block",width:20,height:2,background:"#fff",borderRadius:2}}/>
+          <span style={{display:"block",width:20,height:2,background:"#fff",borderRadius:2}}/>
+          <span style={{display:"block",width:20,height:2,background:"#fff",borderRadius:2}}/>
         </button>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:32,flexWrap:"wrap",gap:16}}>
+        <div className="greeting-bar" style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:32,flexWrap:"wrap",gap:8}}>
           <div>
             {view==="client"&&sel&&<div style={{fontSize:12,marginBottom:6}}>
               <button onClick={()=>{sV("clients");sSel(null);}} style={{background:"none",border:"none",color:"#6b7280",cursor:"pointer",fontSize:12,fontFamily:"Arial,sans-serif"}}>← All Clients</button>
@@ -311,7 +311,7 @@ export default function App(){
             <div style={{fontSize:12,color:BLUE,fontWeight:700,letterSpacing:"0.08em",marginBottom:4,textTransform:"uppercase"}}>{gr}, {nm} 👋</div>
             <div style={{fontSize:26,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"-0.01em"}}>{view==="summary"?"Overview":view==="clients"?"All Clients":view==="countries"?"Current Openings":sel?.name||""}</div>
           </div>
-          <div style={{textAlign:"right"}}>
+          <div className="topbar-right" style={{textAlign:"right"}}>
             <div style={{fontSize:22,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"0.05em"}}>{fT(now)}</div>
             <div style={{fontSize:12,color:"#6b7280",marginTop:3}}>{fD(now)}</div>
           </div>
