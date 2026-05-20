@@ -41,6 +41,16 @@ const KC = {
   "No Status Yet":          {bg:"#1f2937",color:"#9ca3af",border:"#4b5563"},
 };
 
+// Format contact date as "5th January, 2026"
+const fmtContactDate = (dateStr) => {
+  if(!dateStr) return "";
+  const d = new Date(dateStr + "T00:00:00");
+  if(isNaN(d)) return dateStr;
+  const day = d.getDate();
+  const s = [11,12,13].includes(day) ? "th" : day%10===1?"st":day%10===2?"nd":day%10===3?"rd":"th";
+  return `${day}${s} ${d.toLocaleDateString("en-GB",{month:"long"})}, ${d.getFullYear()}`;
+};
+
 // Format large numbers
 const fmtNum = n => {
   if(n >= 1000000) return (n/1000000).toFixed(1).replace(/\.0$/,"") + "M";
@@ -451,7 +461,7 @@ export default function App(){
           <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"16px 22px",marginBottom:24,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
             <div>
               <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6,fontWeight:600}}>Last Contact</div>
-              {sel.lastContacted?(<div><div style={{fontSize:14,fontWeight:600,color:"#f9fafb",marginBottom:2}}>{sel.lastContacted}</div>{sel.lastContactNotes&&<div style={{fontSize:13,color:"#9ca3af"}}>{sel.lastContactNotes}</div>}</div>):(<div style={{fontSize:13,color:"#4b5563"}}>No contact recorded yet</div>)}
+              {sel.lastContacted?(<div><div style={{fontSize:14,fontWeight:600,color:"#f9fafb",marginBottom:2}}>{fmtContactDate(sel.lastContacted)}</div>{sel.lastContactNotes&&<div style={{fontSize:13,color:"#9ca3af"}}>{sel.lastContactNotes}</div>}</div>):(<div style={{fontSize:13,color:"#4b5563"}}>No contact recorded yet</div>)}
             </div>
             <button onClick={()=>{sContactDate(sel.lastContacted||"");sContactNotes(sel.lastContactNotes||"");sContactModal(true);}} style={{background:BLUE,border:"none",borderRadius:6,padding:"9px 18px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",whiteSpace:"nowrap"}}>Update Last Contact</button>
           </div>
