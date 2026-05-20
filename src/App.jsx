@@ -140,9 +140,30 @@ export default function App(){
   const [namePrompt,sNamePrompt]=useState(false);
   const [nameInput,sNameInput]=useState("");
   const [savingName,sSavingName]=useState(false);
+  const [contactModal,sContactModal]=useState(false);
+  const [contactDate,sContactDate]=useState("");
+  const [contactNotes,sContactNotes]=useState("");
+  const [savingContact,sSavingContact]=useState(false);
 
   useEffect(()=>{ const u=onAuthStateChanged(auth,u=>{ sU(u); sR(true); if(u&&!u.displayName) sNamePrompt(true); }); return u; },[]);
   useEffect(()=>{ if(user&&!user.displayName&&!auth.currentUser?.displayName) sNamePrompt(true); },[user]);
+
+  const updateContact = async () => {
+    if(!contactDate) return;
+    sSavingContact(true);
+    try {
+      await fetch(SHEET_URL, {
+        method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify({action:"updateContact",name:sel.name,date:contactDate,notes:contactNotes}),
+      });
+      const updated={...sel,lastContacted:contactDate,lastContactNotes:contactNotes};
+      sD(d=>({...d,applicants:d.applicants.map(a=>a.id===sel.id?updated:a)}));
+      sSel(updated);
+      sContactModal(false);
+    } catch(e){console.error(e);}
+    sSavingContact(false);
+  };
 
   const saveName = async () => {
     if(!nameInput.trim()) return;
@@ -171,7 +192,7 @@ export default function App(){
       const appRows = raw.applicants.slice(2).filter(r=>r[0]&&String(r[0]).trim());
       const applicants = appRows.map((r,i)=>{
         const payable=Number(r[7])||0, paid=Number(r[8])||0;
-        return { id:`JAP${String(i+1).padStart(3,"0")}`, name:String(r[0]||"").trim(), email:String(r[1]||"").trim(), phone:String(r[2]||"").trim(), address:String(r[3]||"").trim(), level:String(r[4]||"").trim(), field:String(r[5]||"").trim(), service:String(r[6]||"").trim(), payable, paid, outstanding:payable-paid, documents:r[10]?String(r[10]).split(",").map(d=>d.trim()).filter(Boolean):[], year:String(r[11]||"").trim() };
+        return { id:`JAP${String(i+1).padStart(3,"0")}`, name:String(r[0]||"").trim(), email:String(r[1]||"").trim(), phone:String(r[2]||"").trim(), address:String(r[3]||"").trim(), level:String(r[4]||"").trim(), field:String(r[5]||"").trim(), service:String(r[6]||"").trim(), payable, paid, outstanding:payable-paid, documents:r[10]?String(r[10]).split(",").map(d=>d.trim()).filter(Boolean):[], year:String(r[11]||"").trim(), lastContacted:String(r[12]||"").trim(), lastContactNotes:String(r[13]||"").trim() };
       });
       const appliRows = raw.applications.slice(2).filter(r=>r[0]&&r[1]);
       const applications = appliRows.map(r=>({
@@ -427,6 +448,13 @@ export default function App(){
               ))}
             </div>
           </div>
+          <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"16px 22px",marginBottom:24,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
+            <div>
+              <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6,fontWeight:600}}>Last Contact</div>
+              {sel.lastContacted?(<div><div style={{fontSize:14,fontWeight:600,color:"#f9fafb",marginBottom:2}}>{sel.lastContacted}</div>{sel.lastContactNotes&&<div style={{fontSize:13,color:"#9ca3af"}}>{sel.lastContactNotes}</div>}</div>):(<div style={{fontSize:13,color:"#4b5563"}}>No contact recorded yet</div>)}
+            </div>
+            <button onClick={()=>{sContactDate(sel.lastContacted||"");sContactNotes(sel.lastContactNotes||"");sContactModal(true);}} style={{background:BLUE,border:"none",borderRadius:6,padding:"9px 18px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",whiteSpace:"nowrap"}}>Update Last Contact</button>
+          </div>
           <div style={{display:"flex",gap:0,borderBottom:`1px solid ${BORDER}`,marginBottom:22,overflowX:"auto"}}>
             {[{id:"applications",label:`Applications (${cApps.length})`},{id:"documents",label:`Documents (${sel.documents.length})`},{id:"payment",label:"Payment"}].map(t=>(
               <button key={t.id} onClick={()=>sTab(t.id)} style={{background:"none",border:"none",padding:"10px 20px",cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:tab===t.id?700:400,color:tab===t.id?BLUE:"#6b7280",borderBottom:tab===t.id?`2px solid ${BLUE}`:"2px solid transparent",marginBottom:-1,letterSpacing:"0.01em"}}>{t.label}</button>
@@ -539,6 +567,25 @@ export default function App(){
 
       </div>
     </div>
+    {contactModal&&sel&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial,sans-serif"}}>
+      <div style={{background:"#0f1923",border:`1px solid ${BORDER}`,borderRadius:14,padding:"32px",width:420,maxWidth:"90vw"}}>
+        <div style={{fontSize:18,fontWeight:700,color:"#f9fafb",marginBottom:4}}>Update Last Contact</div>
+        <div style={{fontSize:13,color:"#6b7280",marginBottom:24}}>{sel.name}</div>
+        <div style={{marginBottom:16}}>
+          <label style={{fontSize:12,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:8,fontWeight:600}}>Date Contacted</label>
+          <input type="date" value={contactDate} onChange={e=>sContactDate(e.target.value)} style={{width:"100%",background:"#060d14",border:`1px solid ${BORDER}`,borderRadius:6,padding:"10px 14px",color:"#f9fafb",fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"Arial,sans-serif"}}/>
+        </div>
+        <div style={{marginBottom:24}}>
+          <label style={{fontSize:12,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:8,fontWeight:600}}>Notes</label>
+          <textarea value={contactNotes} onChange={e=>sContactNotes(e.target.value)} rows={3} placeholder="e.g. Reminded about outstanding balance..."
+            style={{width:"100%",background:"#060d14",border:`1px solid ${BORDER}`,borderRadius:6,padding:"10px 14px",color:"#f9fafb",fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"Arial,sans-serif",resize:"vertical"}}/>
+        </div>
+        <div style={{display:"flex",gap:10}}>
+          <button onClick={()=>sContactModal(false)} style={{flex:1,background:BLUE_MID,border:`1px solid ${BORDER}`,borderRadius:6,padding:"11px",color:"#9ca3af",fontWeight:600,fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Cancel</button>
+          <button onClick={updateContact} disabled={savingContact||!contactDate} style={{flex:2,background:BLUE,border:"none",borderRadius:6,padding:"11px",color:"#fff",fontWeight:700,fontSize:14,cursor:savingContact||!contactDate?"not-allowed":"pointer",opacity:savingContact||!contactDate?0.6:1,fontFamily:"Arial,sans-serif"}}>{savingContact?"Saving...":"Save"}</button>
+        </div>
+      </div>
+    </div>}
     {namePrompt&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial,sans-serif"}}>
       <div style={{background:"#0f1923",border:"1px solid #1e2d3d",borderRadius:14,padding:"36px 32px",width:380,maxWidth:"90vw"}}>
         <div style={{fontSize:22,fontWeight:700,color:"#f9fafb",marginBottom:8}}>Welcome! 👋</div>
