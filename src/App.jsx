@@ -24,6 +24,11 @@ const BLUE_MID = "#1a2740";
 const BG = "#060d14";
 const BORDER = "#1e2d3d";
 
+const ROLES = {
+  "info@japaguys.com": "admin",
+  "erumiselielijah@gmail.com": "contact",
+};
+
 // Progress badge colors
 const SC = {
   "Submitted":          {bg:"#0d2d6b",color:"#93c5fd",border:"#1565F5"},
@@ -154,9 +159,40 @@ export default function App(){
   const [contactDate,sContactDate]=useState("");
   const [contactNotes,sContactNotes]=useState("");
   const [savingContact,sSavingContact]=useState(false);
+  const [editApp,sEditApp]=useState(null);
+  const [editAppFields,sEditAppFields]=useState({ourProgress:"",schoolStatus:"",notes:""});
+  const [savingApp,sSavingApp]=useState(false);
+  const [editPaid,sEditPaid]=useState(false);
+  const [editPaidVal,sEditPaidVal]=useState("");
+  const [savingPaid,sSavingPaid]=useState(false);
 
   useEffect(()=>{ const u=onAuthStateChanged(auth,u=>{ sU(u); sR(true); if(u&&!u.displayName) sNamePrompt(true); }); return u; },[]);
   useEffect(()=>{ if(user&&!user.displayName&&!auth.currentUser?.displayName) sNamePrompt(true); },[user]);
+
+  const updateApplication = async () => {
+    if(!editApp) return;
+    sSavingApp(true);
+    try {
+      await fetch(SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"updateApplication",clientName:editApp.clientName,university:editApp.university,ourProgress:editAppFields.ourProgress,schoolStatus:editAppFields.schoolStatus,notes:editAppFields.notes})});
+      sD(d=>({...d,applications:d.applications.map(a=>a.clientId===editApp.clientId&&a.university===editApp.university?{...a,...editAppFields}:a)}));
+      sEditApp(null);
+    } catch(e){console.error(e);}
+    sSavingApp(false);
+  };
+
+  const updateAmountPaid = async () => {
+    if(editPaidVal==="") return;
+    sSavingPaid(true);
+    try {
+      await fetch(SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"updateAmountPaid",name:sel.name,value:editPaidVal})});
+      const newPaid=Number(editPaidVal);
+      const updated={...sel,paid:newPaid,outstanding:sel.payable-newPaid};
+      sD(d=>({...d,applicants:d.applicants.map(a=>a.id===sel.id?updated:a)}));
+      sSel(updated);
+      sEditPaid(false);
+    } catch(e){console.error(e);}
+    sSavingPaid(false);
+  };
 
   const updateContact = async () => {
     if(!contactDate) return;
@@ -217,6 +253,8 @@ export default function App(){
   if(!user)  return <Login/>;
 
   const nm=(user.displayName||auth.currentUser?.displayName||user.email.split("@")[0]);
+  const role=ROLES[(user?.email||"").toLowerCase()]||"viewer";
+  const can=(f)=>role==="admin"||(role==="contact"&&f==="lastContact");
   const hr=now.getHours();
   const gr=hr<12?"Good morning":hr<17?"Good afternoon":"Good evening";
   const fT=d=>d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
@@ -463,7 +501,7 @@ export default function App(){
               <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6,fontWeight:600}}>Last Contact</div>
               {sel.lastContacted?(<div><div style={{fontSize:14,fontWeight:600,color:"#f9fafb",marginBottom:2}}>{fmtContactDate(sel.lastContacted)}</div>{sel.lastContactNotes&&<div style={{fontSize:13,color:"#9ca3af"}}>{sel.lastContactNotes}</div>}</div>):(<div style={{fontSize:13,color:"#4b5563"}}>No contact recorded yet</div>)}
             </div>
-            <button onClick={()=>{sContactDate(sel.lastContacted||"");sContactNotes(sel.lastContactNotes||"");sContactModal(true);}} style={{background:BLUE,border:"none",borderRadius:6,padding:"9px 18px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",whiteSpace:"nowrap"}}>Update Last Contact</button>
+            {can("lastContact")&&<button onClick={()=>{sContactDate(sel.lastContacted||"");sContactNotes(sel.lastContactNotes||"");sContactModal(true);}} style={{background:BLUE,border:"none",borderRadius:6,padding:"9px 18px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",whiteSpace:"nowrap"}}>Update Last Contact</button>}
           </div>
           <div style={{display:"flex",gap:0,borderBottom:`1px solid ${BORDER}`,marginBottom:22,overflowX:"auto"}}>
             {[{id:"applications",label:`Applications (${cApps.length})`},{id:"documents",label:`Documents (${sel.documents.length})`},{id:"payment",label:"Payment"}].map(t=>(
@@ -476,7 +514,7 @@ export default function App(){
                 <div key={i} style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"18px 22px"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12,marginBottom:10}}>
                     <div><div style={{fontWeight:700,fontSize:15,color:"#f9fafb",marginBottom:2}}>{app.university}</div><div style={{fontSize:13,color:"#6b7280"}}>{app.programme} · <span style={{color:BLUE}}>{app.country}</span></div></div>
-                    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}><Bdg l={app.ourProgress} m={SC}/><Bdg l={app.schoolStatus} m={KC}/></div>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}><Bdg l={app.ourProgress} m={SC}/><Bdg l={app.schoolStatus} m={KC}/>{can("applications")&&<button onClick={()=>{sEditApp(app);sEditAppFields({ourProgress:app.ourProgress,schoolStatus:app.schoolStatus,notes:app.notes});}} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:4,padding:"3px 10px",color:"#6b7280",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✏ Edit</button>}</div>
                   </div>
                   <div style={{display:"flex",gap:18,flexWrap:"wrap",fontSize:12,color:"#4b5563"}}>
                     {app.period&&<span>📅 {app.period}</span>}{app.appFee&&<span>💳 {app.appFee}</span>}{app.tuition&&<span>🎓 {app.tuition}</span>}
@@ -502,11 +540,22 @@ export default function App(){
           {tab==="payment"&&(
             <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"26px 30px",maxWidth:440}}>
               <div style={{fontWeight:700,color:"#f9fafb",fontSize:15,marginBottom:22}}>Payment Summary</div>
-              {[{label:"Service Fee",val:`₦${sel.payable.toLocaleString()}`,color:"#f9fafb"},{label:"Amount Paid",val:`₦${sel.paid.toLocaleString()}`,color:"#34d399"}].map((x,i)=>(
-                <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"13px 0",borderBottom:`1px solid ${BORDER}`}}>
-                  <span style={{color:"#6b7280",fontSize:14}}>{x.label}</span><span style={{color:x.color,fontSize:14,fontWeight:600}}>{x.val}</span>
+                <div style={{display:"flex",justifyContent:"space-between",padding:"13px 0",borderBottom:`1px solid ${BORDER}`}}>
+                <span style={{color:"#6b7280",fontSize:14}}>Service Fee</span>
+                <span style={{color:"#f9fafb",fontSize:14,fontWeight:600}}>₦{sel.payable.toLocaleString()}</span>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"13px 0",borderBottom:`1px solid ${BORDER}`}}>
+                <span style={{color:"#6b7280",fontSize:14}}>Amount Paid</span>
+                <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                  {editPaid?(<>
+                    <input type="number" value={editPaidVal} onChange={e=>sEditPaidVal(e.target.value)} style={{width:130,background:BG,border:`1px solid ${BLUE}`,borderRadius:6,padding:"6px 10px",color:"#f9fafb",fontSize:14,outline:"none",fontFamily:"Arial,sans-serif"}} autoFocus/>
+                    <button onClick={updateAmountPaid} disabled={savingPaid} style={{background:BLUE,border:"none",borderRadius:6,padding:"6px 14px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>{savingPaid?"...":"Save"}</button>
+                    <button onClick={()=>sEditPaid(false)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"6px 10px",color:"#6b7280",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Cancel</button>
+                  </>):(
+                    <><span style={{color:"#34d399",fontSize:14,fontWeight:600}}>₦{sel.paid.toLocaleString()}</span>{can("payments")&&<button onClick={()=>{sEditPaidVal(String(sel.paid));sEditPaid(true);}} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:4,padding:"3px 10px",color:"#6b7280",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✏ Edit</button>}</>
+                  )}
                 </div>
-              ))}
+              </div>
               <div style={{display:"flex",justifyContent:"space-between",padding:"18px 0"}}>
                 <span style={{color:"#f9fafb",fontSize:15,fontWeight:700}}>Outstanding</span>
                 <span style={{fontSize:22,fontWeight:700,color:sel.outstanding>0?"#fbbf24":"#34d399"}}>₦{Math.max(0,sel.outstanding).toLocaleString()}</span>
@@ -577,6 +626,33 @@ export default function App(){
 
       </div>
     </div>
+    {editApp&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial,sans-serif"}}>
+      <div style={{background:"#0f1923",border:`1px solid ${BORDER}`,borderRadius:14,padding:"32px",width:460,maxWidth:"90vw"}}>
+        <div style={{fontSize:18,fontWeight:700,color:"#f9fafb",marginBottom:4}}>Edit Application</div>
+        <div style={{fontSize:13,color:"#6b7280",marginBottom:24}}>{editApp.university} · {editApp.clientName}</div>
+        <div style={{marginBottom:16}}>
+          <label style={{fontSize:12,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:8,fontWeight:600}}>Our Progress</label>
+          <select value={editAppFields.ourProgress} onChange={e=>sEditAppFields(f=>({...f,ourProgress:e.target.value}))} style={{width:"100%",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"10px 14px",color:"#f9fafb",fontSize:14,outline:"none",fontFamily:"Arial,sans-serif"}}>
+            {Object.keys(SC).map(v=><option key={v} value={v}>{v}</option>)}
+          </select>
+        </div>
+        <div style={{marginBottom:16}}>
+          <label style={{fontSize:12,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:8,fontWeight:600}}>School Status</label>
+          <select value={editAppFields.schoolStatus} onChange={e=>sEditAppFields(f=>({...f,schoolStatus:e.target.value}))} style={{width:"100%",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"10px 14px",color:"#f9fafb",fontSize:14,outline:"none",fontFamily:"Arial,sans-serif"}}>
+            {Object.keys(KC).map(v=><option key={v} value={v}>{v}</option>)}
+          </select>
+        </div>
+        <div style={{marginBottom:24}}>
+          <label style={{fontSize:12,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:8,fontWeight:600}}>Notes</label>
+          <textarea value={editAppFields.notes} onChange={e=>sEditAppFields(f=>({...f,notes:e.target.value}))} rows={3} placeholder="Internal notes..."
+            style={{width:"100%",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"10px 14px",color:"#f9fafb",fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"Arial,sans-serif",resize:"vertical"}}/>
+        </div>
+        <div style={{display:"flex",gap:10}}>
+          <button onClick={()=>sEditApp(null)} style={{flex:1,background:BLUE_MID,border:`1px solid ${BORDER}`,borderRadius:6,padding:"11px",color:"#9ca3af",fontWeight:600,fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Cancel</button>
+          <button onClick={updateApplication} disabled={savingApp} style={{flex:2,background:BLUE,border:"none",borderRadius:6,padding:"11px",color:"#fff",fontWeight:700,fontSize:14,cursor:savingApp?"not-allowed":"pointer",opacity:savingApp?0.6:1,fontFamily:"Arial,sans-serif"}}>{savingApp?"Saving...":"Save"}</button>
+        </div>
+      </div>
+    </div>}
     {contactModal&&sel&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial,sans-serif"}}>
       <div style={{background:"#0f1923",border:`1px solid ${BORDER}`,borderRadius:14,padding:"32px",width:420,maxWidth:"90vw"}}>
         <div style={{fontSize:18,fontWeight:700,color:"#f9fafb",marginBottom:4}}>Update Last Contact</div>
