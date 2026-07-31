@@ -46,6 +46,40 @@ const KC = {
   "No Status Yet":          {bg:"#1f2937",color:"#9ca3af",border:"#4b5563"},
 };
 
+// Programme synonym groups for shortlist matching
+const SYNONYMS = {
+  "computer science":["software engineering","computing","informatics","computer engineering","information technology","data science","artificial intelligence","machine learning","cybersecurity","information systems","web development"],
+  "food science":["nutrition","dietetics","food technology","food engineering","food and nutrition","food studies","food safety","food processing"],
+  "business":["management","business administration","commerce","economics","finance","accounting","marketing","international business","entrepreneurship","supply chain","business management"],
+  "engineering":["mechanical engineering","civil engineering","electrical engineering","chemical engineering","systems engineering","industrial engineering","structural engineering","mechatronics"],
+  "medicine":["medical","health sciences","public health","biomedical","pharmacy","nursing","dentistry","clinical","pharmacology"],
+  "law":["legal studies","international law","jurisprudence","criminology"],
+  "arts":["fine arts","visual arts","design","media","communication","film","photography","creative"],
+  "social science":["sociology","psychology","political science","international relations","anthropology","social work","development studies"],
+  "education":["teaching","pedagogy","educational management","early childhood","curriculum"],
+  "agriculture":["agricultural science","agronomy","animal science","veterinary","crop science","horticulture","soil science"],
+  "environmental":["environmental science","ecology","sustainability","earth science","climate","environmental management"],
+  "mathematics":["statistics","applied mathematics","mathematical sciences","actuarial","data analytics"],
+  "physics":["applied physics","astrophysics","materials science","optics","photonics"],
+  "chemistry":["chemical science","biochemistry","pharmaceutical","organic chemistry","analytical chemistry"],
+  "biology":["life sciences","biotechnology","microbiology","molecular biology","genetics","bioinformatics","zoology","botany"],
+  "architecture":["urban planning","construction","building science","interior design","landscape","spatial planning"],
+  "linguistics":["language","translation","applied linguistics","english language","literature","cultural studies"],
+};
+const SYNONYM_MAP = {};
+Object.entries(SYNONYMS).forEach(([key,related])=>{
+  const group=[key,...related].map(t=>t.toLowerCase());
+  group.forEach(term=>{ if(!SYNONYM_MAP[term]) SYNONYM_MAP[term]=new Set(); group.forEach(t=>SYNONYM_MAP[term].add(t)); });
+});
+const matchesProgramme=(progText,query)=>{
+  if(!query.trim()) return true;
+  const q=query.toLowerCase().trim(), prog=progText.toLowerCase();
+  if(prog.includes(q)) return true;
+  const exact=SYNONYM_MAP[q]; if(exact) return [...exact].some(t=>prog.includes(t));
+  const partial=Object.entries(SYNONYM_MAP).find(([term])=>term.includes(q)||q.includes(term));
+  return partial?[...partial[1]].some(t=>prog.includes(t)):false;
+};
+
 // Format contact date as "5th January, 2026" — handles both YYYY-MM-DD and ISO strings from Sheets
 const fmtContactDate = (dateStr) => {
   if(!dateStr) return "";
@@ -168,6 +202,14 @@ export default function App(){
   const [editPaid,sEditPaid]=useState(false);
   const [editPaidVal,sEditPaidVal]=useState("");
   const [savingPaid,sSavingPaid]=useState(false);
+  const [oppTab,sOppTab]=useState("browse");
+  const [browseSearch,sBrowseSearch]=useState("");
+  const [browseCountry,sBrowseCountry]=useState("");
+  const [browseLevel,sBrowseLevel]=useState("");
+  const [browseType,sBrowseType]=useState("");
+  const [slForm,sSlForm]=useState({name:"",countries:[],level:"",funding:"",maxTuition:"",maxFee:"",programme:""});
+  const [slResult,sSlResult]=useState(null);
+  const [slRemoved,sSlRemoved]=useState(new Set());
 
   useEffect(()=>{ const u=onAuthStateChanged(auth,u=>{ sU(u); sR(true); if(u&&!u.displayName) sNamePrompt(true); }); return u; },[]);
   useEffect(()=>{ if(user&&!user.displayName&&!auth.currentUser?.displayName) sNamePrompt(true); },[user]);
@@ -248,7 +290,11 @@ export default function App(){
         clientName:String(r[0]||"").trim(), university:String(r[1]||"").trim(), country:String(r[2]||"").trim(), programme:String(r[3]||"").trim(), period:String(r[4]||'').trim(), appFee:String(r[5]||"Free").trim(), tuition:String(r[6]||"").trim(), ourProgress:String(r[7]||"").trim(), schoolStatus:String(r[8]||"").trim(), notes:String(r[9]||"").trim(),
       }));
       const linked = applications.map(ap=>({...ap, clientId:(applicants.find(a=>a.name.toLowerCase()===ap.clientName.toLowerCase())||{}).id||null}));
-      sD({applicants,applications:linked}); sL(false);
+      const oppRows = raw.opportunities ? raw.opportunities.slice(1).filter(r=>r[0]&&String(r[0]).trim()) : [];
+      const opportunities = oppRows.map(r=>({
+        school:String(r[0]||"").trim(), country:String(r[1]||"").trim(), programme:String(r[2]||"").trim(), level:String(r[3]||"").trim(), type:String(r[4]||"").trim(), tuition:String(r[5]||"").trim(), fee:String(r[6]||"").trim(), period:String(r[7]||"").trim(), english:String(r[8]||"").trim(), appNotes:String(r[9]||"").trim(), spring:String(r[10]||"").trim(), link:String(r[11]||"").trim(), tuitionMin:Number(r[12])||0, tuitionMax:Number(r[13])||0, feeMin:Number(r[14])||0, feeMax:Number(r[15])||0,
+      }));
+      sD({applicants,applications:linked,opportunities}); sL(false);
     }).catch(err=>{console.error(err);sL(false);});
   },[user]);
 
@@ -269,7 +315,7 @@ export default function App(){
     </div>
   );
 
-  const {applicants,applications}=data;
+  const {applicants,applications,opportunities=[]}=data;
   const tot=applications.length, tc=applicants.length;
   const sub=applications.filter(a=>a.ourProgress==="Submitted").length;
   const pC =applications.filter(a=>a.ourProgress==="Pending - Applicant").length;
@@ -290,22 +336,6 @@ export default function App(){
   });
   const countries=Object.entries(cMap).sort((a,b)=>b[1].total-a[1].total);
 
-  // Countries & Fees — only active deadlines, deduplicated by university, sorted by nearest deadline
-  const seen = new Set();
-  const activeSchools = applications
-    .filter(a => isActive(a.period))
-    .filter(a => {
-      const key = a.university + "|" + a.country;
-      if(seen.has(key)) return false;
-      seen.add(key); return true;
-    })
-    .map(a => ({...a, _deadline: parseDeadline(a.period)}))
-    .sort((a,b)=>{
-      if(!a._deadline && !b._deadline) return 0;
-      if(!a._deadline) return 1;
-      if(!b._deadline) return -1;
-      return a._deadline - b._deadline;
-    });
 
   // Format deadline date for display — show only the end date
   const fmtDeadline = (period) => {
@@ -316,6 +346,31 @@ export default function App(){
     if(d) return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
     return v;
   };
+
+  const fmtOrdinalDate=(d)=>{const day=d.getDate();const s=[11,12,13].includes(day)?"th":day%10===1?"st":day%10===2?"nd":day%10===3?"rd":"th";return `${day}${s} ${d.toLocaleDateString("en-GB",{month:"long"})}, ${d.getFullYear()}`;};
+
+  const generateShortlist=()=>{
+    const {name,countries,level,funding,maxTuition,maxFee,programme}=slForm;
+    const result=opportunities.filter(o=>{
+      if(countries.length>0&&!countries.includes(o.country)) return false;
+      if(level){const levels=o.level.split(",").map(l=>l.trim().toLowerCase());if(!levels.some(l=>l===level.toLowerCase())) return false;}
+      if(funding&&o.type!==funding) return false;
+      if(maxTuition&&o.type!=="Fully Funded"&&o.tuitionMin>Number(maxTuition)) return false;
+      if(maxFee&&o.feeMax>Number(maxFee)) return false;
+      if(!matchesProgramme(o.programme,programme)) return false;
+      return true;
+    });
+    sSlResult(result);
+    sSlRemoved(new Set());
+  };
+
+  const filteredOpps=opportunities.filter(o=>{
+    if(browseSearch&&!o.school.toLowerCase().includes(browseSearch.toLowerCase())) return false;
+    if(browseCountry&&o.country!==browseCountry) return false;
+    if(browseLevel){const levels=o.level.split(",").map(l=>l.trim());if(!levels.includes(browseLevel)) return false;}
+    if(browseType&&o.type!==browseType) return false;
+    return true;
+  });
 
   const allC=[...new Set(applications.map(a=>a.country?.trim()).filter(Boolean))].sort();
   const allSt=[...new Set(applications.map(a=>a.ourProgress).filter(Boolean))].sort();
@@ -347,12 +402,12 @@ export default function App(){
           <img src={LOGO} alt="JapaGuys" style={{height:32,marginBottom:4,mixBlendMode:"screen"}}/>
           <div style={{fontSize:11,color:"#4b5563",marginTop:6,letterSpacing:"0.05em"}}>Operations Dashboard</div>
         </div>
-        {[{id:"summary",icon:"⊞",label:"Overview"},{id:"clients",icon:"👥",label:"All Clients"},{id:"countries",icon:"🌍",label:"Current Openings"}].map(item=>(
-          <button key={item.id} onClick={()=>{sV(item.id);sSel(null);sS("");sMenu(false);}}
+        {[{id:"summary",icon:"⊞",label:"Overview"},{id:"clients",icon:"👥",label:"All Clients"},{id:"opportunities",icon:"🌍",label:"Opportunities"}].map(item=>(
+          <button key={item.id} onClick={()=>{sV(item.id);sSel(null);sS("");sMenu(false);sOppTab("browse");}}
             style={{display:"flex",alignItems:"center",gap:10,padding:"11px 20px",background:navActive(item.id)?"#1a2740":"none",border:"none",borderLeft:navActive(item.id)?`3px solid ${BLUE}`:"3px solid transparent",color:navActive(item.id)?"#f9fafb":"#6b7280",cursor:"pointer",fontSize:13,fontWeight:navActive(item.id)?700:400,fontFamily:"Arial,sans-serif",textAlign:"left",width:"100%",letterSpacing:"0.01em"}}>
             <span style={{fontSize:14}}>{item.icon}</span>{item.label}
             {item.id==="clients"&&<span style={{marginLeft:"auto",fontSize:11,background:"#0d2d6b",color:"#93c5fd",padding:"1px 7px",borderRadius:10,fontWeight:700}}>{tc}</span>}
-            {item.id==="countries"&&<span style={{marginLeft:"auto",fontSize:11,background:"#064e3b",color:"#34d399",padding:"1px 7px",borderRadius:10,fontWeight:700}}>{activeSchools.length}</span>}
+            {item.id==="opportunities"&&<span style={{marginLeft:"auto",fontSize:11,background:"#064e3b",color:"#34d399",padding:"1px 7px",borderRadius:10,fontWeight:700}}>{opportunities.length}</span>}
           </button>
         ))}
         <div style={{marginTop:"auto",padding:"0 20px"}}>
@@ -380,7 +435,7 @@ export default function App(){
               <span style={{color:BLUE}}>{sel.id}</span>
             </div>}
             <div style={{fontSize:12,color:BLUE,fontWeight:700,letterSpacing:"0.08em",marginBottom:4,textTransform:"uppercase"}}>{gr}, {nm} 👋</div>
-            <div style={{fontSize:26,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"-0.01em"}}>{view==="summary"?"Overview":view==="clients"?"All Clients":view==="countries"?"Current Openings":sel?.name||""}</div>
+            <div style={{fontSize:26,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"-0.01em"}}>{view==="summary"?"Overview":view==="clients"?"All Clients":view==="opportunities"?"Opportunities":sel?.name||""}</div>
           </div>
           <div className="topbar-right" style={{textAlign:"right"}}>
             <div style={{fontSize:22,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"0.05em"}}>{fT(now)}</div>
@@ -420,7 +475,7 @@ export default function App(){
           <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:22}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
               <div style={{fontWeight:700,color:"#f9fafb",fontSize:14}}>Applications by Country</div>
-              <button onClick={()=>sV("countries")} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"5px 14px",color:BLUE,fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:600}}>View openings →</button>
+              <button onClick={()=>sV("opportunities")} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"5px 14px",color:BLUE,fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:600}}>View opportunities →</button>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10}}>
               {countries.map(([country,info])=>(
@@ -568,64 +623,123 @@ export default function App(){
           )}
         </div>}
 
-        {/* ── CURRENT OPENINGS ── */}
-        {view==="countries"&&<div>
-          <div style={{marginBottom:16,fontSize:13,color:"#6b7280"}}>
-            Showing <strong style={{color:"#f9fafb"}}>{activeSchools.length}</strong> schools with active deadlines as of today ({new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})})
-          </div>
-          {/* MOBILE CARDS VIEW */}
-          <div className="countries-cards" style={{display:"none",flexDirection:"column",gap:12,marginBottom:16}}>
-            {activeSchools.map((s,i)=>(
-              <div key={i} style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"16px"}}>
-                <div style={{fontWeight:700,color:"#f9fafb",fontSize:14,marginBottom:4}}>{s.university}</div>
-                <div style={{marginBottom:10}}><span style={{background:"#0d2d6b",color:"#93c5fd",padding:"2px 8px",borderRadius:4,fontSize:12,fontWeight:600}}>{s.country}</span></div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,fontSize:12}}>
-                  <div style={{background:"#060d14",borderRadius:6,padding:"8px 10px"}}>
-                    <div style={{color:"#6b7280",marginBottom:2,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em"}}>Tuition</div>
-                    <div style={{color:s.tuition==="Fully Funded"||s.tuition==="Tuition Free"?"#34d399":"#d1d5db",fontWeight:s.tuition==="Fully Funded"||s.tuition==="Tuition Free"?700:400}}>{s.tuition||"—"}</div>
-                  </div>
-                  <div style={{background:"#060d14",borderRadius:6,padding:"8px 10px"}}>
-                    <div style={{color:"#6b7280",marginBottom:2,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em"}}>App Fee</div>
-                    <div style={{color:s.appFee==="Free"?"#34d399":"#d1d5db",fontWeight:s.appFee==="Free"?700:400}}>{s.appFee||"—"}</div>
-                  </div>
-                </div>
-                <div style={{marginTop:8,fontSize:12,color:"#9ca3af"}}>📅 {fmtDeadline(s.period)}</div>
-              </div>
+        {/* ── OPPORTUNITIES ── */}
+        {view==="opportunities"&&(()=>{
+          const lbl={fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:6,fontWeight:600};
+          const finp={width:"100%",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"9px 12px",color:"#f9fafb",fontSize:13,outline:"none",fontFamily:"Arial,sans-serif",boxSizing:"border-box"};
+          const oppCountries=[...new Set(opportunities.map(o=>o.country).filter(Boolean))].sort();
+          return <div>
+          <div style={{display:"flex",gap:0,borderBottom:`1px solid ${BORDER}`,marginBottom:22}}>
+            {[{id:"browse",label:`Browse All (${opportunities.length})`},{id:"shortlist",label:"Generate Shortlist"}].map(t=>(
+              <button key={t.id} onClick={()=>sOppTab(t.id)} style={{background:"none",border:"none",padding:"10px 20px",cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:oppTab===t.id?700:400,color:oppTab===t.id?BLUE:"#6b7280",borderBottom:oppTab===t.id?`2px solid ${BLUE}`:"2px solid transparent",marginBottom:-1}}>{t.label}</button>
             ))}
           </div>
-          {/* DESKTOP TABLE VIEW */}
-          <div className="countries-table">
-          <div className="table-wrap" style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,overflow:"hidden"}}>
-            <table style={{width:"100%",borderCollapse:"collapse"}}>
-              <thead>
-                <tr>
-                  <th style={TH}>#</th>
-                  <th style={TH}>School / Institution</th>
-                  <th style={TH}>Country</th>
-                  <th style={TH}>Tuition Fee</th>
-                  <th style={TH}>Application Fee</th>
-                  <th style={TH}>Deadline</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activeSchools.map((s,i)=>(
-                  <tr key={i} onMouseEnter={e=>e.currentTarget.style.background="#0d1e30"} onMouseLeave={e=>e.currentTarget.style.background="transparent"} style={{transition:"background 0.1s"}}>
-                    <td style={{...TD,color:"#4b5563",width:40}}>{i+1}</td>
-                    <td style={{...TD,color:"#f9fafb",fontWeight:600}}>{s.university}</td>
-                    <td style={{...TD}}><span style={{background:"#0d2d6b",color:"#93c5fd",padding:"2px 8px",borderRadius:4,fontSize:12,fontWeight:600}}>{s.country}</span></td>
-                    <td style={{...TD,color:s.tuition==="Fully Funded"||s.tuition==="Tuition Free"?"#34d399":"#d1d5db",fontWeight:s.tuition==="Fully Funded"||s.tuition==="Tuition Free"?700:400}}>{s.tuition||"—"}</td>
-                    <td style={{...TD,color:s.appFee==="Free"?"#34d399":"#d1d5db",fontWeight:s.appFee==="Free"?700:400}}>{s.appFee||"—"}</td>
-                    <td style={{...TD,color:"#9ca3af",fontSize:12}}>{fmtDeadline(s.period)}</td>
-                  </tr>
-                ))}
-                {activeSchools.length===0&&(
-                  <tr><td colSpan={6} style={{...TD,textAlign:"center",color:"#4b5563",padding:"40px"}}>No active openings found for today.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          </div>
-        </div>}
+
+          {oppTab==="browse"&&<div>
+            <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"14px 18px",marginBottom:16}}>
+              <div className="filter-row" style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <input placeholder="Search school..." value={browseSearch} onChange={e=>sBrowseSearch(e.target.value)} style={{...SI,width:200,padding:"9px 14px"}}/>
+                <select value={browseCountry} onChange={e=>sBrowseCountry(e.target.value)} style={SI}><option value="">All Countries</option>{oppCountries.map(c=><option key={c}>{c}</option>)}</select>
+                <select value={browseLevel} onChange={e=>sBrowseLevel(e.target.value)} style={SI}><option value="">All Levels</option>{["Bachelors","Masters","PhD"].map(l=><option key={l}>{l}</option>)}</select>
+                <select value={browseType} onChange={e=>sBrowseType(e.target.value)} style={SI}><option value="">All Types</option><option>Fully Funded</option><option>Self Paid Tuition</option></select>
+                <button onClick={()=>{sBrowseSearch("");sBrowseCountry("");sBrowseLevel("");sBrowseType("");}} style={{...SI,background:BLUE_MID,color:"#9ca3af"}}>✕ Clear</button>
+              </div>
+              <div style={{marginTop:8,fontSize:12,color:"#4b5563"}}>Showing <strong style={{color:"#f9fafb"}}>{filteredOpps.length}</strong> of {opportunities.length} opportunities</div>
+            </div>
+            <div className="table-wrap" style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,overflow:"hidden"}}>
+              <table style={{width:"100%",borderCollapse:"collapse"}}>
+                <thead><tr>
+                  <th style={TH}>#</th><th style={TH}>School / Institution</th><th style={TH}>Country</th><th style={TH}>Level</th><th style={TH}>Type</th><th style={TH}>Tuition</th><th style={TH}>App Fee</th><th style={TH}>Deadline</th>
+                </tr></thead>
+                <tbody>
+                  {filteredOpps.map((o,i)=>(
+                    <tr key={i} onMouseEnter={e=>e.currentTarget.style.background="#0d1e30"} onMouseLeave={e=>e.currentTarget.style.background="transparent"} style={{transition:"background 0.1s"}}>
+                      <td style={{...TD,color:"#4b5563",width:36}}>{i+1}</td>
+                      <td style={{...TD,fontWeight:600,color:"#f9fafb"}}>{o.school}{o.link&&<a href={o.link} target="_blank" rel="noreferrer" style={{marginLeft:8,color:BLUE,fontSize:11,textDecoration:"none"}}>↗</a>}</td>
+                      <td style={TD}><span style={{background:"#0d2d6b",color:"#93c5fd",padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:600}}>{o.country}</span></td>
+                      <td style={{...TD,fontSize:12,color:"#9ca3af"}}>{o.level}</td>
+                      <td style={{...TD,fontSize:12,color:o.type==="Fully Funded"?"#34d399":"#d1d5db",fontWeight:o.type==="Fully Funded"?700:400}}>{o.type}</td>
+                      <td style={{...TD,fontSize:12,color:"#d1d5db"}}>{o.tuition||"—"}</td>
+                      <td style={{...TD,fontSize:12,color:o.feeMax===0?"#34d399":"#d1d5db"}}>{o.fee||"—"}</td>
+                      <td style={{...TD,fontSize:12,color:"#9ca3af"}}>{fmtDeadline(o.period)}</td>
+                    </tr>
+                  ))}
+                  {filteredOpps.length===0&&<tr><td colSpan={8} style={{...TD,textAlign:"center",color:"#4b5563",padding:"40px"}}>No opportunities match the current filters.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>}
+
+          {oppTab==="shortlist"&&<div style={{display:"flex",gap:20,alignItems:"flex-start",flexWrap:"wrap"}}>
+            {/* Form */}
+            <div style={{width:290,flexShrink:0,background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"20px 18px"}}>
+              <div style={{fontWeight:700,color:"#f9fafb",fontSize:14,marginBottom:16}}>Shortlist Criteria</div>
+              <div style={{marginBottom:12}}><label style={lbl}>Client Name</label><input value={slForm.name} onChange={e=>sSlForm(f=>({...f,name:e.target.value}))} placeholder="e.g. John Doe" style={finp}/></div>
+              <div style={{marginBottom:12}}>
+                <label style={lbl}>Countries of Interest</label>
+                <div style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"8px 10px",maxHeight:150,overflowY:"auto"}}>
+                  {oppCountries.map(c=>(
+                    <label key={c} style={{display:"flex",alignItems:"center",gap:8,padding:"3px 0",cursor:"pointer",fontSize:13,color:"#d1d5db"}}>
+                      <input type="checkbox" checked={slForm.countries.includes(c)} onChange={e=>sSlForm(f=>({...f,countries:e.target.checked?[...f.countries,c]:f.countries.filter(x=>x!==c)}))} style={{accentColor:BLUE}}/>
+                      {c}
+                    </label>
+                  ))}
+                </div>
+                {slForm.countries.length>0&&<div style={{fontSize:11,color:BLUE,marginTop:4}}>{slForm.countries.length} selected · <button onClick={()=>sSlForm(f=>({...f,countries:[]}))} style={{background:"none",border:"none",color:"#6b7280",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif",padding:0}}>clear</button></div>}
+              </div>
+              <div style={{marginBottom:12}}><label style={lbl}>Level</label><select value={slForm.level} onChange={e=>sSlForm(f=>({...f,level:e.target.value}))} style={finp}><option value="">Any</option><option>Bachelors</option><option>Masters</option><option>PhD</option></select></div>
+              <div style={{marginBottom:12}}><label style={lbl}>Funding</label><select value={slForm.funding} onChange={e=>sSlForm(f=>({...f,funding:e.target.value}))} style={finp}><option value="">Any</option><option>Fully Funded</option><option>Self Paid Tuition</option></select></div>
+              <div style={{marginBottom:12}}><label style={lbl}>Max Tuition Budget (EUR)</label><input type="number" value={slForm.maxTuition} onChange={e=>sSlForm(f=>({...f,maxTuition:e.target.value}))} placeholder="e.g. 5000" style={finp}/></div>
+              <div style={{marginBottom:12}}><label style={lbl}>Max Application Fee (EUR)</label><input type="number" value={slForm.maxFee} onChange={e=>sSlForm(f=>({...f,maxFee:e.target.value}))} placeholder="e.g. 100" style={finp}/></div>
+              <div style={{marginBottom:18}}>
+                <label style={lbl}>Programme / Field of Interest</label>
+                <input value={slForm.programme} onChange={e=>sSlForm(f=>({...f,programme:e.target.value}))} placeholder="e.g. Computer Science, Nutrition" style={finp}/>
+                <div style={{fontSize:11,color:"#4b5563",marginTop:4}}>Related fields are also matched</div>
+              </div>
+              <button onClick={generateShortlist} style={{width:"100%",background:BLUE,border:"none",borderRadius:6,padding:"12px",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif",marginBottom:8}}>Generate Shortlist →</button>
+              {slResult&&<button onClick={()=>{sSlResult(null);sSlRemoved(new Set());sSlForm({name:"",countries:[],level:"",funding:"",maxTuition:"",maxFee:"",programme:""}); }} style={{width:"100%",background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"9px",color:"#6b7280",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Clear & Reset</button>}
+            </div>
+
+            {/* Results */}
+            <div style={{flex:1,minWidth:0}}>
+              {!slResult&&<div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"60px 40px",textAlign:"center",color:"#4b5563"}}><div style={{fontSize:36,marginBottom:12}}>📋</div><div style={{fontSize:14}}>Fill in the criteria on the left and click <strong style={{color:"#f9fafb"}}>Generate Shortlist</strong>.</div></div>}
+              {slResult&&<div>
+                <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"18px 22px",marginBottom:14}}>
+                  <div style={{fontSize:10,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:700,marginBottom:2}}>Application Shortlist</div>
+                  <div style={{fontSize:17,fontWeight:700,color:"#f9fafb",marginBottom:2}}>FOR {(slForm.name||"—").toUpperCase()}</div>
+                  <div style={{fontSize:12,color:"#6b7280"}}>{fmtOrdinalDate(new Date())} · {slResult.filter((_,i)=>!slRemoved.has(i)).length} of {slResult.length} opportunities shown</div>
+                  {slResult.length===0&&<div style={{marginTop:10,fontSize:13,color:"#f87171",background:"#450a0a",padding:"8px 12px",borderRadius:6}}>No opportunities matched those criteria. Try widening your filters.</div>}
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  {slResult.map((o,i)=>slRemoved.has(i)?null:(
+                    <div key={i} style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"16px 20px",position:"relative"}}>
+                      <button onClick={()=>sSlRemoved(s=>{const n=new Set(s);n.add(i);return n;})} title="Remove from shortlist" style={{position:"absolute",top:12,right:12,background:"none",border:`1px solid ${BORDER}`,borderRadius:4,padding:"2px 8px",color:"#6b7280",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕ Remove</button>
+                      <div style={{paddingRight:90}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:6}}>
+                          <div style={{fontWeight:700,fontSize:15,color:"#f9fafb"}}>{o.school}</div>
+                          <span style={{background:"#0d2d6b",color:"#93c5fd",padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:600}}>{o.country}</span>
+                          {o.type==="Fully Funded"&&<span style={{background:"#064e3b",color:"#34d399",padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:700}}>Fully Funded</span>}
+                        </div>
+                        {o.programme&&<div style={{fontSize:12,color:"#9ca3af",marginBottom:8,lineHeight:1.5}}>{o.programme.length>220?o.programme.slice(0,220)+"…":o.programme}</div>}
+                        <div style={{display:"flex",gap:14,flexWrap:"wrap",fontSize:12,color:"#6b7280",marginBottom:o.appNotes?8:0}}>
+                          <span>🎓 {o.level}</span>
+                          {o.tuition&&<span>💰 {o.tuition}</span>}
+                          {o.fee&&<span>💳 {o.fee}</span>}
+                          {o.period&&<span>📅 {fmtDeadline(o.period)}</span>}
+                          {o.english&&<span>🌐 {o.english}</span>}
+                        </div>
+                        {o.appNotes&&<div style={{background:BG,borderRadius:6,padding:"7px 10px",fontSize:12,color:"#9ca3af",borderLeft:`3px solid ${BORDER}`}}>📝 {o.appNotes}</div>}
+                        {o.link&&<a href={o.link} target="_blank" rel="noreferrer" style={{display:"inline-block",marginTop:8,fontSize:12,color:BLUE,textDecoration:"none"}}>🔗 Apply / Info →</a>}
+                      </div>
+                    </div>
+                  ))}
+                  {slResult.filter((_,i)=>!slRemoved.has(i)).length===0&&slResult.length>0&&<div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"40px",textAlign:"center",color:"#4b5563",fontSize:13}}>All opportunities removed. Click <strong>Clear & Reset</strong> to start over.</div>}
+                </div>
+              </div>}
+            </div>
+          </div>}
+        </div>;
+        })()}
 
       </div>
     </div>
