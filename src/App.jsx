@@ -46,14 +46,17 @@ const KC = {
   "No Status Yet":          {bg:"#1f2937",color:"#9ca3af",border:"#4b5563"},
 };
 
-// Format contact date as "5th January, 2026"
+// Format contact date as "5th January, 2026" — handles both YYYY-MM-DD and ISO strings from Sheets
 const fmtContactDate = (dateStr) => {
   if(!dateStr) return "";
-  const d = new Date(dateStr + "T00:00:00");
+  const iso = dateStr.includes("T") ? dateStr : dateStr + "T00:00:00Z";
+  const d = new Date(iso);
   if(isNaN(d)) return dateStr;
-  const day = d.getDate();
-  const s = [11,12,13].includes(day) ? "th" : day%10===1?"st":day%10===2?"nd":day%10===3?"rd":"th";
-  return `${day}${s} ${d.toLocaleDateString("en-GB",{month:"long"})}, ${d.getFullYear()}`;
+  const day = d.getUTCDate();
+  const month = new Date(Date.UTC(2000,d.getUTCMonth(),1)).toLocaleString("en-GB",{month:"long"});
+  const year = d.getUTCFullYear();
+  const s = [11,12,13].includes(day)?"th":day%10===1?"st":day%10===2?"nd":day%10===3?"rd":"th";
+  return `${day}${s} ${month}, ${year}`;
 };
 
 // Format large numbers
@@ -501,7 +504,7 @@ export default function App(){
               <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6,fontWeight:600}}>Last Contact</div>
               {sel.lastContacted?(<div><div style={{fontSize:14,fontWeight:600,color:"#f9fafb",marginBottom:2}}>{fmtContactDate(sel.lastContacted)}</div>{sel.lastContactNotes&&<div style={{fontSize:13,color:"#9ca3af"}}>{sel.lastContactNotes}</div>}</div>):(<div style={{fontSize:13,color:"#4b5563"}}>No contact recorded yet</div>)}
             </div>
-            {can("lastContact")&&<button onClick={()=>{sContactDate(sel.lastContacted||"");sContactNotes(sel.lastContactNotes||"");sContactModal(true);}} style={{background:BLUE,border:"none",borderRadius:6,padding:"9px 18px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",whiteSpace:"nowrap"}}>Update Last Contact</button>}
+            {can("lastContact")&&<button onClick={()=>{const raw=sel.lastContacted||"";sContactDate(raw.includes("T")?raw.slice(0,10):raw);sContactNotes(sel.lastContactNotes||"");sContactModal(true);}} style={{background:BLUE,border:"none",borderRadius:6,padding:"9px 18px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",whiteSpace:"nowrap"}}>Update Last Contact</button>}
           </div>
           <div style={{display:"flex",gap:0,borderBottom:`1px solid ${BORDER}`,marginBottom:22,overflowX:"auto"}}>
             {[{id:"applications",label:`Applications (${cApps.length})`},{id:"documents",label:`Documents (${sel.documents.length})`},{id:"payment",label:"Payment"}].map(t=>(
@@ -517,7 +520,7 @@ export default function App(){
                     <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}><Bdg l={app.ourProgress} m={SC}/><Bdg l={app.schoolStatus} m={KC}/>{can("applications")&&<button onClick={()=>{sEditApp(app);sEditAppFields({ourProgress:app.ourProgress,schoolStatus:app.schoolStatus,notes:app.notes});}} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:4,padding:"3px 10px",color:"#6b7280",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✏ Edit</button>}</div>
                   </div>
                   <div style={{display:"flex",gap:18,flexWrap:"wrap",fontSize:12,color:"#4b5563"}}>
-                    {app.period&&<span>📅 {app.period}</span>}{app.appFee&&<span>💳 {app.appFee}</span>}{app.tuition&&<span>🎓 {app.tuition}</span>}
+                    {app.period&&<span>📅 {fmtDeadline(app.period)}</span>}{app.appFee&&<span>💳 {app.appFee}</span>}{app.tuition&&<span>🎓 {app.tuition}</span>}
                   </div>
                   {app.notes&&<div style={{background:BG,borderRadius:6,padding:"8px 12px",fontSize:13,color:"#9ca3af",fontStyle:"italic",border:`1px solid ${BORDER}`,marginTop:10}}>📝 {app.notes}</div>}
                 </div>
