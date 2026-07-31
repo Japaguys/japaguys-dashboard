@@ -148,13 +148,7 @@ const parseDeadline = (period) => {
   return null;
 };
 
-const isActive = (period) => {
-  if(!period) return false;
-  const deadline = parseDeadline(period);
-  if(!deadline) return true; // if we can't parse, show it
-  const today = new Date(); today.setHours(0,0,0,0);
-  return deadline >= today;
-};
+
 
 const Bdg = ({l,m})=>{ const s=(m&&m[l])||{bg:"#1f2937",color:"#9ca3af",border:"#4b5563"}; return <span style={{background:s.bg,color:s.color,border:`1px solid ${s.border}`,borderRadius:4,padding:"3px 10px",fontSize:11,fontWeight:600,whiteSpace:"nowrap",display:"inline-block",letterSpacing:"0.02em"}}>{l||"N/A"}</span>; };
 const MC = ({label,value,accent,sub})=><div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"18px 20px",borderTop:`3px solid ${accent}`}}><div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8,fontWeight:600}}>{label}</div><div style={{fontSize:28,fontWeight:700,color:accent,fontFamily:"Arial,sans-serif",lineHeight:1}}>{value}</div>{sub&&<div style={{fontSize:11,color:"#4b5563",marginTop:4}}>{sub}</div>}</div>;
@@ -350,7 +344,7 @@ export default function App(){
   const fmtOrdinalDate=(d)=>{const day=d.getDate();const s=[11,12,13].includes(day)?"th":day%10===1?"st":day%10===2?"nd":day%10===3?"rd":"th";return `${day}${s} ${d.toLocaleDateString("en-GB",{month:"long"})}, ${d.getFullYear()}`;};
 
   const generateShortlist=()=>{
-    const {name,countries,level,funding,maxTuition,maxFee,programme}=slForm;
+    const {countries,level,funding,maxTuition,maxFee,programme}=slForm;
     const result=opportunities.filter(o=>{
       if(countries.length>0&&!countries.includes(o.country)) return false;
       if(level){const levels=o.level.split(",").map(l=>l.trim().toLowerCase());if(!levels.some(l=>l===level.toLowerCase())) return false;}
