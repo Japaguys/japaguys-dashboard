@@ -643,7 +643,7 @@ export default function App(){
             <div className="table-wrap" style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,overflow:"hidden"}}>
               <table style={{width:"100%",borderCollapse:"collapse"}}>
                 <thead><tr>
-                  <th style={TH}>#</th><th style={TH}>School / Institution</th><th style={TH}>Country</th><th style={TH}>Level</th><th style={TH}>Type</th><th style={TH}>Tuition</th><th style={TH}>App Fee</th><th style={TH}>Deadline</th>
+                  <th style={TH}>#</th><th style={TH}>School / Institution</th><th style={TH}>Country</th><th style={TH}>Level</th><th style={TH}>Type</th><th style={TH}>Tuition</th><th style={TH}>App Fee</th><th style={TH}>Application Period</th>
                 </tr></thead>
                 <tbody>
                   {filteredOpps.map((o,i)=>(
@@ -655,7 +655,7 @@ export default function App(){
                       <td style={{...TD,fontSize:12,color:o.type==="Fully Funded"?"#34d399":"#d1d5db",fontWeight:o.type==="Fully Funded"?700:400}}>{o.type}</td>
                       <td style={{...TD,fontSize:12,color:"#d1d5db"}}>{o.tuition||"—"}</td>
                       <td style={{...TD,fontSize:12,color:o.feeMax===0?"#34d399":"#d1d5db"}}>{o.fee||"—"}</td>
-                      <td style={{...TD,fontSize:12,color:"#9ca3af"}}>{fmtDeadline(o.period)}</td>
+                      <td style={{...TD,fontSize:12,color:"#9ca3af"}}>{o.period||"—"}</td>
                     </tr>
                   ))}
                   {filteredOpps.length===0&&<tr><td colSpan={8} style={{...TD,textAlign:"center",color:"#4b5563",padding:"40px"}}>No opportunities match the current filters.</td></tr>}
@@ -726,7 +726,7 @@ export default function App(){
                           <th style={slTH}>Relevant Programmes</th>
                           <th style={slTH}>Tuition</th>
                           <th style={slTH}>Application Fee</th>
-                          <th style={slTH}>Deadline</th>
+                          <th style={slTH}>Application Period</th>
                           <th style={slTH}>Notes</th>
                           <th style={{...slTH,padding:4}}></th>
                         </tr>
@@ -749,7 +749,7 @@ export default function App(){
                               </td>
                               <td style={{...slTD,fontWeight:o.type==="Fully Funded"?700:400}}>{o.tuition||"—"}</td>
                               <td style={slTD}>{o.fee||"—"}</td>
-                              <td style={slTD}>{fmtDeadline(o.period)||"—"}</td>
+                              <td style={slTD}>{o.period||"—"}</td>
                               <td style={slTD}>{notes||"—"}</td>
                               <td style={{...slTD,textAlign:"center",padding:4}}>
                                 <button onClick={()=>sSlRemoved(s=>{const n=new Set(s);n.add(i);return n;})} title="Remove" style={{background:"none",border:"1px solid #ccc",borderRadius:4,padding:"2px 5px",color:"#999",fontSize:10,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button>
