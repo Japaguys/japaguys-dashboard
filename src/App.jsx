@@ -714,7 +714,12 @@ export default function App(){
                           <span style={{background:"#0d2d6b",color:"#93c5fd",padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:600}}>{o.country}</span>
                           {o.type==="Fully Funded"&&<span style={{background:"#064e3b",color:"#34d399",padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:700}}>Fully Funded</span>}
                         </div>
-                        {o.programme&&<div style={{fontSize:12,color:"#9ca3af",marginBottom:8,lineHeight:1.5}}>{o.programme.length>220?o.programme.slice(0,220)+"…":o.programme}</div>}
+                        {o.programme&&(()=>{
+                          const all=o.programme.split(",").map(p=>p.trim()).filter(Boolean);
+                          const matched=slForm.programme?all.filter(p=>matchesProgramme(p,slForm.programme)):all.slice(0,4);
+                          const display=matched.join(", ")+((!slForm.programme&&all.length>4)?` +${all.length-4} more`:"");
+                          return display?<div style={{fontSize:12,color:"#9ca3af",marginBottom:8,lineHeight:1.5}}>{display}</div>:null;
+                        })()}
                         <div style={{display:"flex",gap:14,flexWrap:"wrap",fontSize:12,color:"#6b7280",marginBottom:o.appNotes?8:0}}>
                           <span>🎓 {o.level}</span>
                           {o.tuition&&<span>💰 {o.tuition}</span>}
