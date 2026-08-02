@@ -736,7 +736,7 @@ export default function App(){
                           if(slRemoved.has(i)) return null;
                           const all=o.programme.split(",").map(p=>p.trim()).filter(Boolean);
                           const matched=slForm.programme?all.filter(p=>matchesProgramme(p,slForm.programme)):all.slice(0,3);
-                          const notes=[o.english,o.appNotes].filter(Boolean).join("; ");
+                          const notes=[o.english,o.appNotes].filter(v=>v&&v.trim().toLowerCase()!=="none").join("; ");
                           return (
                             <tr key={i}>
                               <td style={{...slTD,fontWeight:600}}>
