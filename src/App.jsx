@@ -699,25 +699,27 @@ export default function App(){
               {!slResult&&<div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"60px 40px",textAlign:"center",color:"#4b5563"}}><div style={{fontSize:36,marginBottom:12}}>📋</div><div style={{fontSize:14}}>Fill in the criteria on the left and click <strong style={{color:"#f9fafb"}}>Generate Shortlist</strong>.</div></div>}
               {slResult&&(()=>{
                 const visible=slResult.filter((_,i)=>!slRemoved.has(i));
+                const slBorder="1px solid #000";
+                const slTH={padding:"8px 10px",fontSize:12,fontWeight:700,color:"#000",background:"#fff",textAlign:"left",border:slBorder};
+                const slTD={padding:"8px 10px",fontSize:12,color:"#000",border:slBorder,verticalAlign:"top",lineHeight:1.5};
                 return <div>
                   {/* Header */}
-                  <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"18px 22px",marginBottom:14}}>
-                    <div style={{fontSize:13,fontWeight:700,color:"#f9fafb",letterSpacing:"0.04em",marginBottom:2}}>APPLICATION SHORTLIST FOR {(slForm.name||"—").toUpperCase()}</div>
-                    <div style={{fontSize:12,color:"#6b7280"}}>{fmtOrdinalDate(new Date())} · {visible.length} {visible.length===1?"opportunity":"opportunities"}</div>
-                    {slResult.length===0&&<div style={{marginTop:10,fontSize:13,color:"#f87171",background:"#450a0a",padding:"8px 12px",borderRadius:6}}>No opportunities matched those criteria. Try widening your filters.</div>}
-                  </div>
+                  {slResult.length===0&&<div style={{background:"#450a0a",border:`1px solid ${BORDER}`,borderRadius:10,padding:"14px 18px",marginBottom:14,fontSize:13,color:"#f87171"}}>No opportunities matched those criteria. Try widening your filters.</div>}
                   {/* Table */}
-                  {visible.length>0&&<div className="table-wrap" style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,overflow:"hidden"}}>
+                  {visible.length>0&&<div className="table-wrap" style={{background:"#fff",border:"1px solid #000",borderRadius:6,overflow:"hidden"}}>
+                    <div style={{padding:"14px 16px",borderBottom:"1px solid #000",background:"#fff"}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"#000",letterSpacing:"0.03em"}}>APPLICATION SHORTLIST FOR {(slForm.name||"—").toUpperCase()} ({fmtOrdinalDate(new Date())})</div>
+                    </div>
                     <table style={{width:"100%",borderCollapse:"collapse"}}>
                       <thead>
                         <tr>
-                          <th style={{...TH,width:160}}>School</th>
-                          <th style={TH}>Relevant Programmes</th>
-                          <th style={{...TH,width:110}}>Tuition</th>
-                          <th style={{...TH,width:110}}>Application Fee</th>
-                          <th style={{...TH,width:100}}>Deadline</th>
-                          <th style={{...TH,width:180}}>Notes</th>
-                          <th style={{...TH,width:50}}></th>
+                          <th style={{...slTH,width:160}}>School</th>
+                          <th style={slTH}>Relevant Programmes</th>
+                          <th style={{...slTH,width:110}}>Tuition</th>
+                          <th style={{...slTH,width:110}}>Application Fee</th>
+                          <th style={{...slTH,width:100}}>Deadline</th>
+                          <th style={{...slTH,minWidth:220}}>Notes</th>
+                          <th style={{...slTH,width:40,border:slBorder}}></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -727,21 +729,20 @@ export default function App(){
                           const matched=slForm.programme?all.filter(p=>matchesProgramme(p,slForm.programme)):all.slice(0,3);
                           const notes=[o.english,o.appNotes].filter(Boolean).join("; ");
                           return (
-                            <tr key={i} style={{borderTop:`1px solid ${BORDER}`,verticalAlign:"top"}}>
-                              <td style={{...TD,fontWeight:600,color:"#f9fafb",lineHeight:1.5}}>
+                            <tr key={i}>
+                              <td style={{...slTD,fontWeight:600}}>
                                 {o.school}
-                                {o.country&&<div style={{fontSize:11,color:"#6b7280",fontWeight:400,marginTop:2}}>{o.country}</div>}
-                                {o.link&&<a href={o.link} target="_blank" rel="noreferrer" style={{fontSize:11,color:BLUE,textDecoration:"none",display:"block",marginTop:2}}>Apply ↗</a>}
+                                {o.country&&<div style={{fontSize:11,color:"#555",fontWeight:400,marginTop:2}}>{o.country}</div>}
                               </td>
-                              <td style={{...TD,fontSize:12,color:"#d1d5db",lineHeight:1.6}}>
-                                {matched.length>0?matched.map((p,j)=><div key={j}>{p}</div>):<span style={{color:"#4b5563"}}>—</span>}
+                              <td style={slTD}>
+                                {matched.length>0?matched.map((p,j)=><div key={j}>{p}</div>):<span style={{color:"#999"}}>—</span>}
                               </td>
-                              <td style={{...TD,fontSize:12,color:o.type==="Fully Funded"?"#34d399":"#d1d5db",fontWeight:o.type==="Fully Funded"?700:400}}>{o.tuition||"—"}</td>
-                              <td style={{...TD,fontSize:12,color:"#d1d5db"}}>{o.fee||"—"}</td>
-                              <td style={{...TD,fontSize:12,color:"#9ca3af",whiteSpace:"nowrap"}}>{fmtDeadline(o.period)||"—"}</td>
-                              <td style={{...TD,fontSize:11,color:"#9ca3af",lineHeight:1.5}}>{notes||"—"}</td>
-                              <td style={{...TD,textAlign:"center"}}>
-                                <button onClick={()=>sSlRemoved(s=>{const n=new Set(s);n.add(i);return n;})} title="Remove" style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:4,padding:"2px 6px",color:"#6b7280",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button>
+                              <td style={{...slTD,fontWeight:o.type==="Fully Funded"?700:400}}>{o.tuition||"—"}</td>
+                              <td style={slTD}>{o.fee||"—"}</td>
+                              <td style={{...slTD,whiteSpace:"nowrap"}}>{fmtDeadline(o.period)||"—"}</td>
+                              <td style={slTD}>{notes||"—"}</td>
+                              <td style={{...slTD,textAlign:"center"}}>
+                                <button onClick={()=>sSlRemoved(s=>{const n=new Set(s);n.add(i);return n;})} title="Remove" style={{background:"none",border:"1px solid #ccc",borderRadius:4,padding:"2px 6px",color:"#999",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button>
                               </td>
                             </tr>
                           );
