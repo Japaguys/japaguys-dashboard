@@ -697,44 +697,61 @@ export default function App(){
             {/* Results */}
             <div style={{flex:1,minWidth:0}}>
               {!slResult&&<div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"60px 40px",textAlign:"center",color:"#4b5563"}}><div style={{fontSize:36,marginBottom:12}}>📋</div><div style={{fontSize:14}}>Fill in the criteria on the left and click <strong style={{color:"#f9fafb"}}>Generate Shortlist</strong>.</div></div>}
-              {slResult&&<div>
-                <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"18px 22px",marginBottom:14}}>
-                  <div style={{fontSize:10,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:700,marginBottom:2}}>Application Shortlist</div>
-                  <div style={{fontSize:17,fontWeight:700,color:"#f9fafb",marginBottom:2}}>FOR {(slForm.name||"—").toUpperCase()}</div>
-                  <div style={{fontSize:12,color:"#6b7280"}}>{fmtOrdinalDate(new Date())} · {slResult.filter((_,i)=>!slRemoved.has(i)).length} of {slResult.length} opportunities shown</div>
-                  {slResult.length===0&&<div style={{marginTop:10,fontSize:13,color:"#f87171",background:"#450a0a",padding:"8px 12px",borderRadius:6}}>No opportunities matched those criteria. Try widening your filters.</div>}
-                </div>
-                <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                  {slResult.map((o,i)=>slRemoved.has(i)?null:(
-                    <div key={i} style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"16px 20px",position:"relative"}}>
-                      <button onClick={()=>sSlRemoved(s=>{const n=new Set(s);n.add(i);return n;})} title="Remove from shortlist" style={{position:"absolute",top:12,right:12,background:"none",border:`1px solid ${BORDER}`,borderRadius:4,padding:"2px 8px",color:"#6b7280",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕ Remove</button>
-                      <div style={{paddingRight:90}}>
-                        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:6}}>
-                          <div style={{fontWeight:700,fontSize:15,color:"#f9fafb"}}>{o.school}</div>
-                          <span style={{background:"#0d2d6b",color:"#93c5fd",padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:600}}>{o.country}</span>
-                          {o.type==="Fully Funded"&&<span style={{background:"#064e3b",color:"#34d399",padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:700}}>Fully Funded</span>}
-                        </div>
-                        {o.programme&&(()=>{
+              {slResult&&(()=>{
+                const visible=slResult.filter((_,i)=>!slRemoved.has(i));
+                return <div>
+                  {/* Header */}
+                  <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"18px 22px",marginBottom:14}}>
+                    <div style={{fontSize:13,fontWeight:700,color:"#f9fafb",letterSpacing:"0.04em",marginBottom:2}}>APPLICATION SHORTLIST FOR {(slForm.name||"—").toUpperCase()}</div>
+                    <div style={{fontSize:12,color:"#6b7280"}}>{fmtOrdinalDate(new Date())} · {visible.length} {visible.length===1?"opportunity":"opportunities"}</div>
+                    {slResult.length===0&&<div style={{marginTop:10,fontSize:13,color:"#f87171",background:"#450a0a",padding:"8px 12px",borderRadius:6}}>No opportunities matched those criteria. Try widening your filters.</div>}
+                  </div>
+                  {/* Table */}
+                  {visible.length>0&&<div className="table-wrap" style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,overflow:"hidden"}}>
+                    <table style={{width:"100%",borderCollapse:"collapse"}}>
+                      <thead>
+                        <tr>
+                          <th style={{...TH,width:160}}>School</th>
+                          <th style={TH}>Relevant Programmes</th>
+                          <th style={{...TH,width:110}}>Tuition</th>
+                          <th style={{...TH,width:110}}>Application Fee</th>
+                          <th style={{...TH,width:100}}>Deadline</th>
+                          <th style={{...TH,width:180}}>Notes</th>
+                          <th style={{...TH,width:50}}></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {slResult.map((o,i)=>{
+                          if(slRemoved.has(i)) return null;
                           const all=o.programme.split(",").map(p=>p.trim()).filter(Boolean);
-                          const matched=slForm.programme?all.filter(p=>matchesProgramme(p,slForm.programme)):all.slice(0,4);
-                          const display=matched.join(", ")+((!slForm.programme&&all.length>4)?` +${all.length-4} more`:"");
-                          return display?<div style={{fontSize:12,color:"#9ca3af",marginBottom:8,lineHeight:1.5}}>{display}</div>:null;
-                        })()}
-                        <div style={{display:"flex",gap:14,flexWrap:"wrap",fontSize:12,color:"#6b7280",marginBottom:o.appNotes?8:0}}>
-                          <span>🎓 {o.level}</span>
-                          {o.tuition&&<span>💰 {o.tuition}</span>}
-                          {o.fee&&<span>💳 {o.fee}</span>}
-                          {o.period&&<span>📅 {fmtDeadline(o.period)}</span>}
-                          {o.english&&<span>🌐 {o.english}</span>}
-                        </div>
-                        {o.appNotes&&<div style={{background:BG,borderRadius:6,padding:"7px 10px",fontSize:12,color:"#9ca3af",borderLeft:`3px solid ${BORDER}`}}>📝 {o.appNotes}</div>}
-                        {o.link&&<a href={o.link} target="_blank" rel="noreferrer" style={{display:"inline-block",marginTop:8,fontSize:12,color:BLUE,textDecoration:"none"}}>🔗 Apply / Info →</a>}
-                      </div>
-                    </div>
-                  ))}
-                  {slResult.filter((_,i)=>!slRemoved.has(i)).length===0&&slResult.length>0&&<div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"40px",textAlign:"center",color:"#4b5563",fontSize:13}}>All opportunities removed. Click <strong>Clear & Reset</strong> to start over.</div>}
-                </div>
-              </div>}
+                          const matched=slForm.programme?all.filter(p=>matchesProgramme(p,slForm.programme)):all.slice(0,3);
+                          const notes=[o.english,o.appNotes].filter(Boolean).join("; ");
+                          return (
+                            <tr key={i} style={{borderTop:`1px solid ${BORDER}`,verticalAlign:"top"}}>
+                              <td style={{...TD,fontWeight:600,color:"#f9fafb",lineHeight:1.5}}>
+                                {o.school}
+                                {o.country&&<div style={{fontSize:11,color:"#6b7280",fontWeight:400,marginTop:2}}>{o.country}</div>}
+                                {o.link&&<a href={o.link} target="_blank" rel="noreferrer" style={{fontSize:11,color:BLUE,textDecoration:"none",display:"block",marginTop:2}}>Apply ↗</a>}
+                              </td>
+                              <td style={{...TD,fontSize:12,color:"#d1d5db",lineHeight:1.6}}>
+                                {matched.length>0?matched.map((p,j)=><div key={j}>{p}</div>):<span style={{color:"#4b5563"}}>—</span>}
+                              </td>
+                              <td style={{...TD,fontSize:12,color:o.type==="Fully Funded"?"#34d399":"#d1d5db",fontWeight:o.type==="Fully Funded"?700:400}}>{o.tuition||"—"}</td>
+                              <td style={{...TD,fontSize:12,color:"#d1d5db"}}>{o.fee||"—"}</td>
+                              <td style={{...TD,fontSize:12,color:"#9ca3af",whiteSpace:"nowrap"}}>{fmtDeadline(o.period)||"—"}</td>
+                              <td style={{...TD,fontSize:11,color:"#9ca3af",lineHeight:1.5}}>{notes||"—"}</td>
+                              <td style={{...TD,textAlign:"center"}}>
+                                <button onClick={()=>sSlRemoved(s=>{const n=new Set(s);n.add(i);return n;})} title="Remove" style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:4,padding:"2px 6px",color:"#6b7280",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>}
+                  {visible.length===0&&slResult.length>0&&<div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"40px",textAlign:"center",color:"#4b5563",fontSize:13}}>All rows removed. Click <strong>Clear & Reset</strong> to start over.</div>}
+                </div>;
+              })()}
             </div>
           </div>}
         </div>;
