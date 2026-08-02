@@ -118,7 +118,7 @@ const parseAppDate=(str)=>{
 const parsePeriodCalls=(period)=>{
   if(!period) return [];
   return period.split(";").map((call,i)=>{
-    const parts=call.split(/[–—]/).map(s=>s.trim());
+    const parts=call.split(/\s*[–—]\s*|\s+-\s+/).map(s=>s.trim());
     if(parts.length<2) return null;
     const open=parseAppDate(parts[0]);
     const close=parseAppDate(parts[1]);
