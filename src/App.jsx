@@ -744,7 +744,7 @@ export default function App(){
                                 {o.country&&<div style={{fontSize:11,color:"#555",fontWeight:400,marginTop:2}}>{o.country}</div>}
                               </td>
                               <td style={slTD}>
-                                {matched.length>0?matched.map((p,j)=><div key={j}>{p}</div>):<span style={{color:"#999"}}>—</span>}
+                                {matched.length>0?matched.join("; "):<span style={{color:"#999"}}>—</span>}
                               </td>
                               <td style={{...slTD,fontWeight:o.type==="Fully Funded"?700:400}}>{o.tuition||"—"}</td>
                               <td style={slTD}>{o.fee||"—"}</td>
