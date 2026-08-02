@@ -236,6 +236,7 @@ export default function App(){
   const [openCountry,sOpenCountry]=useState("");
   const [openLevel,sOpenLevel]=useState("");
   const [openType,sOpenType]=useState("");
+  const [openMonths,sOpenMonths]=useState(1);
 
   useEffect(()=>{ const u=onAuthStateChanged(auth,u=>{ sU(u); sR(true); if(u&&!u.displayName) sNamePrompt(true); }); return u; },[]);
   useEffect(()=>{ if(user&&!user.displayName&&!auth.currentUser?.displayName) sNamePrompt(true); },[user]);
@@ -700,38 +701,33 @@ export default function App(){
 
           {oppTab==="open"&&(()=>{
             const today=new Date(); today.setHours(0,0,0,0);
-            const openOpps=opportunities.filter(o=>{
-              const calls=parsePeriodCalls(o.period);
-              return calls.some(c=>c.open&&c.close&&today>=c.open&&today<=c.close);
-            });
-            const filtered=openOpps.filter(o=>{
+            const future=new Date(today); future.setMonth(future.getMonth()+Number(openMonths));
+            const applyFilters=(list)=>list.filter(o=>{
               if(openCountry&&o.country!==openCountry) return false;
               if(openLevel){const lvls=o.level.split(",").map(l=>l.trim().toLowerCase());if(!lvls.some(l=>l===openLevel.toLowerCase())) return false;}
               if(openType&&o.type!==openType) return false;
               return true;
             });
-            const oppCc=[...new Set(openOpps.map(o=>o.country).filter(Boolean))].sort();
-            return <div>
-              <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"14px 18px",marginBottom:16}}>
-                <div className="filter-row" style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-                  <select value={openCountry} onChange={e=>sOpenCountry(e.target.value)} style={SI}><option value="">All Countries</option>{oppCc.map(c=><option key={c}>{c}</option>)}</select>
-                  <select value={openLevel} onChange={e=>sOpenLevel(e.target.value)} style={SI}><option value="">All Levels</option>{["Bachelors","Masters","PhD"].map(l=><option key={l}>{l}</option>)}</select>
-                  <select value={openType} onChange={e=>sOpenType(e.target.value)} style={SI}><option value="">All Types</option><option>Fully Funded</option><option>Self Paid Tuition</option></select>
-                  <button onClick={()=>{sOpenCountry("");sOpenLevel("");sOpenType("");}} style={{...SI,background:BLUE_MID,color:"#9ca3af"}}>✕ Clear</button>
-                </div>
-                <div style={{marginTop:8,fontSize:12,color:"#4b5563"}}>
-                  <strong style={{color:"#34d399"}}>{filtered.length}</strong> currently open {filtered.length===1?"opportunity":"opportunities"} as of {new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}
-                </div>
-              </div>
-              <div className="table-wrap" style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,overflow:"hidden"}}>
+            // open now: today is within at least one call window
+            const nowOpps=opportunities.filter(o=>parsePeriodCalls(o.period).some(c=>c.open&&c.close&&today>=c.open&&today<=c.close));
+            // opening soon: open date is in the future but within the next N months
+            const soonOpps=opportunities.filter(o=>{
+              if(nowOpps.includes(o)) return false;
+              return parsePeriodCalls(o.period).some(c=>c.open&&c.open>today&&c.open<=future);
+            });
+            const allForFilter=[...nowOpps,...soonOpps];
+            const oppCc=[...new Set(allForFilter.map(o=>o.country).filter(Boolean))].sort();
+            const filteredNow=applyFilters(nowOpps);
+            const filteredSoon=applyFilters(soonOpps);
+            const OppTable=({rows,emptyMsg,getCall})=>(
+              <div className="table-wrap" style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,overflow:"hidden",marginBottom:20}}>
                 <table style={{width:"100%",borderCollapse:"collapse"}}>
                   <thead><tr>
-                    <th style={TH}>#</th><th style={TH}>School</th><th style={TH}>Country</th><th style={TH}>Level</th><th style={TH}>Type</th><th style={TH}>Tuition</th><th style={TH}>App Fee</th><th style={TH}>Open Window</th>
+                    <th style={TH}>#</th><th style={TH}>School</th><th style={TH}>Country</th><th style={TH}>Level</th><th style={TH}>Type</th><th style={TH}>Tuition</th><th style={TH}>App Fee</th><th style={TH}>Window</th>
                   </tr></thead>
                   <tbody>
-                    {filtered.map((o,i)=>{
-                      const calls=parsePeriodCalls(o.period);
-                      const activeCall=calls.find(c=>{const t=new Date();t.setHours(0,0,0,0);return c.open&&c.close&&t>=c.open&&t<=c.close;});
+                    {rows.map((o,i)=>{
+                      const call=getCall(o);
                       return(
                         <tr key={i} onMouseEnter={e=>e.currentTarget.style.background="#0d1e30"} onMouseLeave={e=>e.currentTarget.style.background="transparent"} style={{transition:"background 0.1s"}}>
                           <td style={{...TD,color:"#4b5563",width:36}}>{i+1}</td>
@@ -741,16 +737,33 @@ export default function App(){
                           <td style={{...TD,fontSize:12,color:o.type==="Fully Funded"?"#34d399":"#d1d5db",fontWeight:o.type==="Fully Funded"?700:400}}>{o.type}</td>
                           <td style={{...TD,fontSize:12}}>{o.tuition||"—"}</td>
                           <td style={{...TD,fontSize:12}}>{o.fee||"—"}</td>
-                          <td style={{...TD,fontSize:12,color:"#34d399"}}>
-                            {activeCall?`${fmtShortDate(activeCall.open)} – ${fmtShortDate(activeCall.close)}`:o.period}
+                          <td style={{...TD,fontSize:12,color:call?"#34d399":"#fbbf24"}}>
+                            {call?`${fmtShortDate(call.open)} – ${fmtShortDate(call.close)}`:o.period}
                           </td>
                         </tr>
                       );
                     })}
-                    {filtered.length===0&&<tr><td colSpan={8} style={{...TD,textAlign:"center",color:"#4b5563",padding:"40px"}}>No currently open opportunities match the filters.</td></tr>}
+                    {rows.length===0&&<tr><td colSpan={8} style={{...TD,textAlign:"center",color:"#4b5563",padding:"30px"}}>{emptyMsg}</td></tr>}
                   </tbody>
                 </table>
               </div>
+            );
+            return <div>
+              <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"14px 18px",marginBottom:16}}>
+                <div className="filter-row" style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                  <select value={openCountry} onChange={e=>sOpenCountry(e.target.value)} style={SI}><option value="">All Countries</option>{oppCc.map(c=><option key={c}>{c}</option>)}</select>
+                  <select value={openLevel} onChange={e=>sOpenLevel(e.target.value)} style={SI}><option value="">All Levels</option>{["Bachelors","Masters","PhD"].map(l=><option key={l}>{l}</option>)}</select>
+                  <select value={openType} onChange={e=>sOpenType(e.target.value)} style={SI}><option value="">All Types</option><option>Fully Funded</option><option>Self Paid Tuition</option></select>
+                  <select value={openMonths} onChange={e=>sOpenMonths(e.target.value)} style={SI}>
+                    {[1,2,3,4].map(n=><option key={n} value={n}>Opening within {n} month{n>1?"s":""}</option>)}
+                  </select>
+                  <button onClick={()=>{sOpenCountry("");sOpenLevel("");sOpenType("");sOpenMonths(1);}} style={{...SI,background:BLUE_MID,color:"#9ca3af"}}>✕ Clear</button>
+                </div>
+              </div>
+              <div style={{fontSize:13,fontWeight:700,color:"#34d399",marginBottom:8}}>🟢 Open Now ({filteredNow.length})</div>
+              <OppTable rows={filteredNow} emptyMsg="No currently open opportunities match the filters." getCall={o=>parsePeriodCalls(o.period).find(c=>today>=c.open&&today<=c.close)}/>
+              <div style={{fontSize:13,fontWeight:700,color:"#fbbf24",marginBottom:8}}>🟡 Opening Soon — within {openMonths} month{openMonths>1?"s":""} ({filteredSoon.length})</div>
+              <OppTable rows={filteredSoon} emptyMsg={`No opportunities opening in the next ${openMonths} month${openMonths>1?"s":""}.`} getCall={o=>parsePeriodCalls(o.period).find(c=>c.open>today&&c.open<=future)}/>
             </div>;
           })()}
 
