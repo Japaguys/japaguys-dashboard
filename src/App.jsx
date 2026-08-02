@@ -233,6 +233,7 @@ export default function App(){
   const [slRemoved,sSlRemoved]=useState(new Set());
   const [slConfirmed,sSlConfirmed]=useState(false);
   const [slEdits,sSlEdits]=useState({});
+  const [slShowModal,sSlShowModal]=useState(false);
   const [openCountry,sOpenCountry]=useState("");
   const [openLevel,sOpenLevel]=useState("");
   const [openType,sOpenType]=useState("");
@@ -391,6 +392,7 @@ export default function App(){
     sSlRemoved(new Set());
     sSlConfirmed(false);
     sSlEdits({});
+    sSlShowModal(true);
   };
 
   const filteredOpps=opportunities.filter(o=>{
@@ -767,16 +769,15 @@ export default function App(){
             </div>;
           })()}
 
-          {oppTab==="shortlist"&&<div style={{display:"flex",gap:20,alignItems:"flex-start",flexWrap:"wrap"}}>
-            {/* Form */}
-            <div style={{width:290,flexShrink:0,background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"20px 18px"}}>
-              <div style={{fontWeight:700,color:"#f9fafb",fontSize:14,marginBottom:16}}>Shortlist Criteria</div>
+          {oppTab==="shortlist"&&<div style={{display:"flex",justifyContent:"center"}}>
+            <div style={{width:"100%",maxWidth:480,background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"24px 22px"}}>
+              <div style={{fontWeight:700,color:"#f9fafb",fontSize:15,marginBottom:18}}>Shortlist Criteria</div>
               <div style={{marginBottom:12}}><label style={lbl}>Client Name</label><input value={slForm.name} onChange={e=>sSlForm(f=>({...f,name:e.target.value}))} placeholder="e.g. John Doe" style={finp}/></div>
               <div style={{marginBottom:12}}>
                 <label style={lbl}>Countries of Interest</label>
-                <div style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"8px 10px",maxHeight:150,overflowY:"auto"}}>
+                <div style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"8px 10px",maxHeight:160,overflowY:"auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"2px 8px"}}>
                   {oppCountries.map(c=>(
-                    <label key={c} style={{display:"flex",alignItems:"center",gap:8,padding:"3px 0",cursor:"pointer",fontSize:13,color:"#d1d5db"}}>
+                    <label key={c} style={{display:"flex",alignItems:"center",gap:6,padding:"3px 0",cursor:"pointer",fontSize:13,color:"#d1d5db"}}>
                       <input type="checkbox" checked={slForm.countries.includes(c)} onChange={e=>sSlForm(f=>({...f,countries:e.target.checked?[...f.countries,c]:f.countries.filter(x=>x!==c)}))} style={{accentColor:BLUE}}/>
                       {c}
                     </label>
@@ -784,103 +785,22 @@ export default function App(){
                 </div>
                 {slForm.countries.length>0&&<div style={{fontSize:11,color:BLUE,marginTop:4}}>{slForm.countries.length} selected · <button onClick={()=>sSlForm(f=>({...f,countries:[]}))} style={{background:"none",border:"none",color:"#6b7280",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif",padding:0}}>clear</button></div>}
               </div>
-              <div style={{marginBottom:12}}><label style={lbl}>Level</label><select value={slForm.level} onChange={e=>sSlForm(f=>({...f,level:e.target.value}))} style={finp}><option value="">Any</option><option>Bachelors</option><option>Masters</option><option>PhD</option></select></div>
-              <div style={{marginBottom:12}}><label style={lbl}>Funding</label><select value={slForm.funding} onChange={e=>sSlForm(f=>({...f,funding:e.target.value}))} style={finp}><option value="">Any</option><option>Fully Funded</option><option>Self Paid Tuition</option></select></div>
-              <div style={{marginBottom:12}}><label style={lbl}>Max Tuition Budget (EUR)</label><input type="number" value={slForm.maxTuition} onChange={e=>sSlForm(f=>({...f,maxTuition:e.target.value}))} placeholder="e.g. 5000" style={finp}/></div>
-              <div style={{marginBottom:12}}><label style={lbl}>Max Application Fee (EUR)</label><input type="number" value={slForm.maxFee} onChange={e=>sSlForm(f=>({...f,maxFee:e.target.value}))} placeholder="e.g. 100" style={finp}/></div>
-              <div style={{marginBottom:18}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+                <div><label style={lbl}>Level</label><select value={slForm.level} onChange={e=>sSlForm(f=>({...f,level:e.target.value}))} style={finp}><option value="">Any</option><option>Bachelors</option><option>Masters</option><option>PhD</option></select></div>
+                <div><label style={lbl}>Funding</label><select value={slForm.funding} onChange={e=>sSlForm(f=>({...f,funding:e.target.value}))} style={finp}><option value="">Any</option><option>Fully Funded</option><option>Self Paid Tuition</option></select></div>
+                <div><label style={lbl}>Max Tuition (EUR)</label><input type="number" value={slForm.maxTuition} onChange={e=>sSlForm(f=>({...f,maxTuition:e.target.value}))} placeholder="e.g. 5000" style={finp}/></div>
+                <div><label style={lbl}>Max App Fee (EUR)</label><input type="number" value={slForm.maxFee} onChange={e=>sSlForm(f=>({...f,maxFee:e.target.value}))} placeholder="e.g. 100" style={finp}/></div>
+              </div>
+              <div style={{marginBottom:20}}>
                 <label style={lbl}>Programme / Field of Interest</label>
                 <input value={slForm.programme} onChange={e=>sSlForm(f=>({...f,programme:e.target.value}))} placeholder="e.g. Computer Science, Nutrition" style={finp}/>
                 <div style={{fontSize:11,color:"#4b5563",marginTop:4}}>Related fields are also matched</div>
               </div>
-              <button onClick={generateShortlist} style={{width:"100%",background:BLUE,border:"none",borderRadius:6,padding:"12px",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif",marginBottom:8}}>Generate Shortlist →</button>
-              {slResult&&<button onClick={()=>{sSlResult(null);sSlRemoved(new Set());sSlForm({name:"",countries:[],level:"",funding:"",maxTuition:"",maxFee:"",programme:""}); }} style={{width:"100%",background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"9px",color:"#6b7280",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Clear & Reset</button>}
-            </div>
-
-            {/* Results */}
-            <div style={{flex:1,minWidth:0}}>
-              {!slResult&&<div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"60px 40px",textAlign:"center",color:"#4b5563"}}><div style={{fontSize:36,marginBottom:12}}>📋</div><div style={{fontSize:14}}>Fill in the criteria on the left and click <strong style={{color:"#f9fafb"}}>Generate Shortlist</strong>.</div></div>}
-              {slResult&&(()=>{
-                const visible=slResult.filter((_,i)=>!slRemoved.has(i));
-                const slBorder="1px solid #000";
-                const slTH={padding:"8px 10px",fontSize:12,fontWeight:700,color:"#000",background:"#fff",textAlign:"left",border:slBorder};
-                const slTD={padding:"8px 10px",fontSize:12,color:"#000",border:slBorder,verticalAlign:"top",lineHeight:1.5};
-                const cellVal=(i,field,def)=>slEdits[`${i}_${field}`]!==undefined?slEdits[`${i}_${field}`]:def;
-                const setCell=(i,field,val)=>sSlEdits(e=>({...e,[`${i}_${field}`]:val}));
-                const EditCell=({rowIdx,field,defaultVal,style={}})=>slConfirmed
-                  ?<span>{cellVal(rowIdx,field,defaultVal)||"—"}</span>
-                  :<input value={cellVal(rowIdx,field,defaultVal)||""} onChange={e=>setCell(rowIdx,field,e.target.value)} style={{border:"none",borderBottom:"1px dashed #ccc",width:"100%",fontFamily:"Arial,sans-serif",fontSize:12,color:"#000",outline:"none",background:"transparent",...style}}/>;
-                return <div>
-                  {slResult.length===0&&<div style={{background:"#450a0a",border:`1px solid ${BORDER}`,borderRadius:10,padding:"14px 18px",marginBottom:14,fontSize:13,color:"#f87171"}}>No opportunities matched those criteria. Try widening your filters.</div>}
-                  {visible.length>0&&<div>
-                    {/* Action bar — hidden when confirmed */}
-                    {!slConfirmed&&<div style={{display:"flex",gap:10,marginBottom:12,justifyContent:"flex-end"}}>
-                      <div style={{fontSize:12,color:"#6b7280",alignSelf:"center"}}>Click any cell to edit before confirming</div>
-                      <button onClick={()=>sSlConfirmed(true)} style={{background:"#16a34a",border:"none",borderRadius:6,padding:"9px 20px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✓ Confirm Shortlist</button>
-                    </div>}
-                    {slConfirmed&&<div style={{display:"flex",gap:10,marginBottom:12,justifyContent:"flex-end"}}>
-                      <button onClick={()=>sSlConfirmed(false)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"8px 16px",color:"#9ca3af",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✎ Edit</button>
-                    </div>}
-                    <div className="table-wrap" style={{background:"#fff",border:"1px solid #000",borderRadius:6,overflow:"hidden"}}>
-                      <div style={{padding:"16px",borderBottom:"1px solid #000",background:"#fff",textAlign:"center"}}>
-                        <div style={{fontSize:16,fontWeight:700,color:"#000",letterSpacing:"0.03em"}}>APPLICATION SHORTLIST FOR {(slForm.name||"—").toUpperCase()} ({fmtOrdinalDate(new Date())})</div>
-                      </div>
-                      <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
-                        <colgroup>
-                          <col style={{width:"15%"}}/>
-                          <col style={{width:"18%"}}/>
-                          <col style={{width:"12%"}}/>
-                          <col style={{width:"10%"}}/>
-                          <col style={{width:"12%"}}/>
-                          <col style={{width:"29%"}}/>
-                          {!slConfirmed&&<col style={{width:"4%"}}/>}
-                        </colgroup>
-                        <thead>
-                          <tr>
-                            <th style={slTH}>School</th>
-                            <th style={slTH}>Relevant Programmes</th>
-                            <th style={slTH}>Tuition</th>
-                            <th style={slTH}>App Fee</th>
-                            <th style={slTH}>Deadline</th>
-                            <th style={slTH}>Notes</th>
-                            {!slConfirmed&&<th style={{...slTH,padding:4}}></th>}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {slResult.map((o,i)=>{
-                            if(slRemoved.has(i)) return null;
-                            const all=o.programme.split(",").map(p=>p.trim()).filter(Boolean);
-                            const matched=slForm.programme?all.filter(p=>matchesProgramme(p,slForm.programme)):all.slice(0,3);
-                            const noteParts=[o.english&&o.english.trim().toLowerCase()!=="none"?`🌐 ${o.english}`:null,o.appNotes&&o.appNotes.trim().toLowerCase()!=="none"?`📝 ${o.appNotes}`:null].filter(Boolean);
-                            const defaultNotes=noteParts.join(" | ");
-                            const calls=parsePeriodCalls(o.period);
-                            const deadlineText=calls.length===0?(o.period||"—"):calls.length===1?fmtShortDate(calls[0].close):calls.map((c,ci)=>`Call ${ci+1}: ${fmtShortDate(c.close)}`).join(" | ");
-                            return (
-                              <tr key={i}>
-                                <td style={{...slTD,fontWeight:600}}>
-                                  <EditCell rowIdx={i} field="school" defaultVal={o.school} style={{fontWeight:600}}/>
-                                  {o.country&&<div style={{fontSize:11,color:"#555",fontWeight:400,marginTop:2}}>{o.country}</div>}
-                                </td>
-                                <td style={slTD}>
-                                  <EditCell rowIdx={i} field="programmes" defaultVal={matched.length>0?matched.join("; "):"—"}/>
-                                </td>
-                                <td style={slTD}><EditCell rowIdx={i} field="tuition" defaultVal={o.tuition||"—"}/></td>
-                                <td style={slTD}><EditCell rowIdx={i} field="fee" defaultVal={o.fee||"—"}/></td>
-                                <td style={slTD}><EditCell rowIdx={i} field="deadline" defaultVal={deadlineText}/></td>
-                                <td style={slTD}><EditCell rowIdx={i} field="notes" defaultVal={defaultNotes||"—"}/></td>
-                                {!slConfirmed&&<td style={{...slTD,textAlign:"center",padding:4}}>
-                                  <button onClick={()=>sSlRemoved(s=>{const n=new Set(s);n.add(i);return n;})} title="Remove" style={{background:"none",border:"1px solid #ccc",borderRadius:4,padding:"2px 5px",color:"#999",fontSize:10,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button>
-                                </td>}
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>}
-                  {visible.length===0&&slResult.length>0&&<div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"40px",textAlign:"center",color:"#4b5563",fontSize:13}}>All rows removed. Click <strong>Clear & Reset</strong> to start over.</div>}
-                </div>;
-              })()}
+              <div style={{display:"flex",gap:10}}>
+                <button onClick={generateShortlist} style={{flex:1,background:BLUE,border:"none",borderRadius:6,padding:"12px",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Generate Shortlist →</button>
+                {slResult&&<button onClick={()=>sSlShowModal(true)} style={{flex:1,background:"#16a34a",border:"none",borderRadius:6,padding:"12px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>View Shortlist ({slResult.filter((_,i)=>!slRemoved.has(i)).length}) →</button>}
+              </div>
+              {slResult&&<button onClick={()=>{sSlResult(null);sSlRemoved(new Set());sSlEdits({});sSlConfirmed(false);sSlShowModal(false);sSlForm({name:"",countries:[],level:"",funding:"",maxTuition:"",maxFee:"",programme:""});}} style={{width:"100%",marginTop:8,background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"9px",color:"#6b7280",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Clear & Reset</button>}
             </div>
           </div>}
         </div>;
@@ -888,6 +808,71 @@ export default function App(){
 
       </div>
     </div>
+    {slShowModal&&slResult&&(()=>{
+      const visible=slResult.filter((_,i)=>!slRemoved.has(i));
+      const slBorder="1px solid #000";
+      const slTH={padding:"8px 10px",fontSize:12,fontWeight:700,color:"#000",background:"#fff",textAlign:"left",border:slBorder};
+      const slTD={padding:"8px 10px",fontSize:12,color:"#000",border:slBorder,verticalAlign:"top",lineHeight:1.5};
+      const cellVal=(i,field,def)=>slEdits[`${i}_${field}`]!==undefined?slEdits[`${i}_${field}`]:def;
+      const setCell=(i,field,val)=>sSlEdits(e=>({...e,[`${i}_${field}`]:val}));
+      const EditCell=({rowIdx,field,defaultVal,style={}})=>slConfirmed
+        ?<span>{cellVal(rowIdx,field,defaultVal)||"—"}</span>
+        :<input value={cellVal(rowIdx,field,defaultVal)||""} onChange={e=>setCell(rowIdx,field,e.target.value)} style={{border:"none",borderBottom:"1px dashed #aaa",width:"100%",fontFamily:"Arial,sans-serif",fontSize:12,color:"#000",outline:"none",background:"transparent",...style}}/>;
+      return <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",flexDirection:"column",fontFamily:"Arial,sans-serif"}}>
+        {/* Modal toolbar */}
+        <div style={{background:"#0f1923",borderBottom:`1px solid ${BORDER}`,padding:"12px 24px",display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
+          <div style={{flex:1,fontSize:13,color:"#f9fafb",fontWeight:600}}>Shortlist — {(slForm.name||"—")} · {visible.length} {visible.length===1?"row":"rows"}</div>
+          {!slConfirmed&&<><div style={{fontSize:12,color:"#6b7280"}}>Click any cell to edit</div>
+          <button onClick={()=>sSlConfirmed(true)} style={{background:"#16a34a",border:"none",borderRadius:6,padding:"8px 18px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✓ Confirm</button></>}
+          {slConfirmed&&<button onClick={()=>sSlConfirmed(false)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"7px 14px",color:"#9ca3af",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✎ Edit</button>}
+          <button onClick={()=>sSlShowModal(false)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"7px 14px",color:"#9ca3af",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕ Close</button>
+        </div>
+        {/* Modal body */}
+        <div style={{flex:1,overflowY:"auto",padding:"24px 32px",background:"#f3f4f6"}}>
+          {slResult.length===0&&<div style={{background:"#450a0a",borderRadius:10,padding:"14px 18px",marginBottom:14,fontSize:13,color:"#f87171"}}>No opportunities matched those criteria. Try widening your filters.</div>}
+          {visible.length>0&&<div style={{background:"#fff",border:"1px solid #000",borderRadius:6,overflow:"hidden"}}>
+            <div style={{padding:"18px",borderBottom:"1px solid #000",background:"#fff",textAlign:"center"}}>
+              <div style={{fontSize:17,fontWeight:700,color:"#000",letterSpacing:"0.03em"}}>APPLICATION SHORTLIST FOR {(slForm.name||"—").toUpperCase()} ({fmtOrdinalDate(new Date())})</div>
+            </div>
+            <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
+              <colgroup>
+                <col style={{width:"14%"}}/><col style={{width:"18%"}}/><col style={{width:"11%"}}/><col style={{width:"9%"}}/><col style={{width:"11%"}}/><col style={{width:"33%"}}/>{!slConfirmed&&<col style={{width:"4%"}}/>}
+              </colgroup>
+              <thead><tr>
+                <th style={slTH}>School</th><th style={slTH}>Relevant Programmes</th><th style={slTH}>Tuition</th><th style={slTH}>App Fee</th><th style={slTH}>Deadline</th><th style={slTH}>Notes</th>{!slConfirmed&&<th style={{...slTH,padding:4}}></th>}
+              </tr></thead>
+              <tbody>
+                {slResult.map((o,i)=>{
+                  if(slRemoved.has(i)) return null;
+                  const all=o.programme.split(",").map(p=>p.trim()).filter(Boolean);
+                  const matched=slForm.programme?all.filter(p=>matchesProgramme(p,slForm.programme)):all.slice(0,3);
+                  const noteParts=[o.english&&o.english.trim().toLowerCase()!=="none"?`🌐 ${o.english}`:null,o.appNotes&&o.appNotes.trim().toLowerCase()!=="none"?`📝 ${o.appNotes}`:null].filter(Boolean);
+                  const calls=parsePeriodCalls(o.period);
+                  const deadlineText=calls.length===0?(o.period||"—"):calls.length===1?fmtShortDate(calls[0].close):calls.map((c,ci)=>`Call ${ci+1}: ${fmtShortDate(c.close)}`).join(" | ");
+                  return(
+                    <tr key={i}>
+                      <td style={{...slTD,fontWeight:600}}>
+                        <EditCell rowIdx={i} field="school" defaultVal={o.school} style={{fontWeight:600}}/>
+                        {o.country&&<div style={{fontSize:11,color:"#555",fontWeight:400,marginTop:2}}>{o.country}</div>}
+                      </td>
+                      <td style={slTD}><EditCell rowIdx={i} field="programmes" defaultVal={matched.length>0?matched.join("; "):"—"}/></td>
+                      <td style={slTD}><EditCell rowIdx={i} field="tuition" defaultVal={o.tuition||"—"}/></td>
+                      <td style={slTD}><EditCell rowIdx={i} field="fee" defaultVal={o.fee||"—"}/></td>
+                      <td style={slTD}><EditCell rowIdx={i} field="deadline" defaultVal={deadlineText}/></td>
+                      <td style={slTD}><EditCell rowIdx={i} field="notes" defaultVal={noteParts.join(" | ")||"—"}/></td>
+                      {!slConfirmed&&<td style={{...slTD,textAlign:"center",padding:4}}>
+                        <button onClick={()=>sSlRemoved(s=>{const n=new Set(s);n.add(i);return n;})} style={{background:"none",border:"1px solid #ccc",borderRadius:4,padding:"2px 5px",color:"#999",fontSize:10,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button>
+                      </td>}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>}
+          {visible.length===0&&slResult.length>0&&<div style={{background:"#fff",borderRadius:10,padding:"40px",textAlign:"center",color:"#6b7280",fontSize:13}}>All rows removed. Close and click Clear & Reset to start over.</div>}
+        </div>
+      </div>;
+    })()}
     {editApp&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial,sans-serif"}}>
       <div style={{background:"#0f1923",border:`1px solid ${BORDER}`,borderRadius:14,padding:"32px",width:460,maxWidth:"90vw"}}>
         <div style={{fontSize:18,fontWeight:700,color:"#f9fafb",marginBottom:4}}>Edit Application</div>
