@@ -100,6 +100,33 @@ const fmtNum = n => {
   return String(n);
 };
 
+// Parse "1 April", "Apr 16", "Nov 7" etc into a Date, inferring year from today
+const MONTH_MAP={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12,
+  january:1,february:2,march:3,april:4,june:6,july:7,august:8,september:9,october:10,november:11,december:12};
+const inferAppYear=(mNum)=>{const n=new Date();return mNum>=(n.getMonth()+1)?n.getFullYear():n.getFullYear()+1;};
+const parseAppDate=(str)=>{
+  if(!str) return null;
+  str=str.trim().replace(/\./g,"");
+  const p=str.split(/\s+/);
+  let day,month;
+  if(isNaN(parseInt(p[0]))){month=MONTH_MAP[p[0].toLowerCase().slice(0,3)];day=parseInt(p[1]);}
+  else{day=parseInt(p[0]);month=MONTH_MAP[p[1]?.toLowerCase().slice(0,3)];}
+  if(!month||!day||isNaN(day)) return null;
+  return new Date(inferAppYear(month),month-1,day);
+};
+// Parse "1 April – 30 June" or "Nov 7 – Jan 16; Mar 16 – Apr 16" into call objects
+const parsePeriodCalls=(period)=>{
+  if(!period) return [];
+  return period.split(";").map((call,i)=>{
+    const parts=call.split(/[–—]/).map(s=>s.trim());
+    if(parts.length<2) return null;
+    const open=parseAppDate(parts[0]);
+    const close=parseAppDate(parts[1]);
+    return{open,close,idx:i};
+  }).filter(c=>c&&(c.open||c.close));
+};
+const fmtShortDate=(d)=>{if(!d||isNaN(d)) return "?";return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});};
+
 // Parse deadline from period string — returns Date or null
 const parseDeadline = (period) => {
   if(!period) return null;
@@ -204,6 +231,11 @@ export default function App(){
   const [slForm,sSlForm]=useState({name:"",countries:[],level:"",funding:"",maxTuition:"",maxFee:"",programme:""});
   const [slResult,sSlResult]=useState(null);
   const [slRemoved,sSlRemoved]=useState(new Set());
+  const [slConfirmed,sSlConfirmed]=useState(false);
+  const [slEdits,sSlEdits]=useState({});
+  const [openCountry,sOpenCountry]=useState("");
+  const [openLevel,sOpenLevel]=useState("");
+  const [openType,sOpenType]=useState("");
 
   useEffect(()=>{ const u=onAuthStateChanged(auth,u=>{ sU(u); sR(true); if(u&&!u.displayName) sNamePrompt(true); }); return u; },[]);
   useEffect(()=>{ if(user&&!user.displayName&&!auth.currentUser?.displayName) sNamePrompt(true); },[user]);
@@ -356,6 +388,8 @@ export default function App(){
     });
     sSlResult(result);
     sSlRemoved(new Set());
+    sSlConfirmed(false);
+    sSlEdits({});
   };
 
   const filteredOpps=opportunities.filter(o=>{
@@ -624,7 +658,7 @@ export default function App(){
           const oppCountries=[...new Set(opportunities.map(o=>o.country).filter(Boolean))].sort();
           return <div>
           <div style={{display:"flex",gap:0,borderBottom:`1px solid ${BORDER}`,marginBottom:22}}>
-            {[{id:"browse",label:`Browse All (${opportunities.length})`},{id:"shortlist",label:"Generate Shortlist"}].map(t=>(
+            {[{id:"browse",label:`Browse All (${opportunities.length})`},{id:"open",label:"Currently Open"},{id:"shortlist",label:"Generate Shortlist"}].map(t=>(
               <button key={t.id} onClick={()=>sOppTab(t.id)} style={{background:"none",border:"none",padding:"10px 20px",cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:oppTab===t.id?700:400,color:oppTab===t.id?BLUE:"#6b7280",borderBottom:oppTab===t.id?`2px solid ${BLUE}`:"2px solid transparent",marginBottom:-1}}>{t.label}</button>
             ))}
           </div>
@@ -664,6 +698,62 @@ export default function App(){
             </div>
           </div>}
 
+          {oppTab==="open"&&(()=>{
+            const today=new Date(); today.setHours(0,0,0,0);
+            const openOpps=opportunities.filter(o=>{
+              const calls=parsePeriodCalls(o.period);
+              return calls.some(c=>c.open&&c.close&&today>=c.open&&today<=c.close);
+            });
+            const filtered=openOpps.filter(o=>{
+              if(openCountry&&o.country!==openCountry) return false;
+              if(openLevel){const lvls=o.level.split(",").map(l=>l.trim().toLowerCase());if(!lvls.some(l=>l===openLevel.toLowerCase())) return false;}
+              if(openType&&o.type!==openType) return false;
+              return true;
+            });
+            const oppCc=[...new Set(openOpps.map(o=>o.country).filter(Boolean))].sort();
+            return <div>
+              <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"14px 18px",marginBottom:16}}>
+                <div className="filter-row" style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                  <select value={openCountry} onChange={e=>sOpenCountry(e.target.value)} style={SI}><option value="">All Countries</option>{oppCc.map(c=><option key={c}>{c}</option>)}</select>
+                  <select value={openLevel} onChange={e=>sOpenLevel(e.target.value)} style={SI}><option value="">All Levels</option>{["Bachelors","Masters","PhD"].map(l=><option key={l}>{l}</option>)}</select>
+                  <select value={openType} onChange={e=>sOpenType(e.target.value)} style={SI}><option value="">All Types</option><option>Fully Funded</option><option>Self Paid Tuition</option></select>
+                  <button onClick={()=>{sOpenCountry("");sOpenLevel("");sOpenType("");}} style={{...SI,background:BLUE_MID,color:"#9ca3af"}}>✕ Clear</button>
+                </div>
+                <div style={{marginTop:8,fontSize:12,color:"#4b5563"}}>
+                  <strong style={{color:"#34d399"}}>{filtered.length}</strong> currently open {filtered.length===1?"opportunity":"opportunities"} as of {new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}
+                </div>
+              </div>
+              <div className="table-wrap" style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,overflow:"hidden"}}>
+                <table style={{width:"100%",borderCollapse:"collapse"}}>
+                  <thead><tr>
+                    <th style={TH}>#</th><th style={TH}>School</th><th style={TH}>Country</th><th style={TH}>Level</th><th style={TH}>Type</th><th style={TH}>Tuition</th><th style={TH}>App Fee</th><th style={TH}>Open Window</th>
+                  </tr></thead>
+                  <tbody>
+                    {filtered.map((o,i)=>{
+                      const calls=parsePeriodCalls(o.period);
+                      const activeCall=calls.find(c=>{const t=new Date();t.setHours(0,0,0,0);return c.open&&c.close&&t>=c.open&&t<=c.close;});
+                      return(
+                        <tr key={i} onMouseEnter={e=>e.currentTarget.style.background="#0d1e30"} onMouseLeave={e=>e.currentTarget.style.background="transparent"} style={{transition:"background 0.1s"}}>
+                          <td style={{...TD,color:"#4b5563",width:36}}>{i+1}</td>
+                          <td style={{...TD,fontWeight:600,color:"#f9fafb"}}>{o.school}{o.link&&<a href={o.link} target="_blank" rel="noreferrer" style={{marginLeft:8,color:BLUE,fontSize:11,textDecoration:"none"}}>↗</a>}</td>
+                          <td style={TD}><span style={{background:"#0d2d6b",color:"#93c5fd",padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:600}}>{o.country}</span></td>
+                          <td style={{...TD,fontSize:12,color:"#9ca3af"}}>{o.level}</td>
+                          <td style={{...TD,fontSize:12,color:o.type==="Fully Funded"?"#34d399":"#d1d5db",fontWeight:o.type==="Fully Funded"?700:400}}>{o.type}</td>
+                          <td style={{...TD,fontSize:12}}>{o.tuition||"—"}</td>
+                          <td style={{...TD,fontSize:12}}>{o.fee||"—"}</td>
+                          <td style={{...TD,fontSize:12,color:"#34d399"}}>
+                            {activeCall?`${fmtShortDate(activeCall.open)} – ${fmtShortDate(activeCall.close)}`:o.period}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {filtered.length===0&&<tr><td colSpan={8} style={{...TD,textAlign:"center",color:"#4b5563",padding:"40px"}}>No currently open opportunities match the filters.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </div>;
+          })()}
+
           {oppTab==="shortlist"&&<div style={{display:"flex",gap:20,alignItems:"flex-start",flexWrap:"wrap"}}>
             {/* Form */}
             <div style={{width:290,flexShrink:0,background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"20px 18px"}}>
@@ -702,63 +792,78 @@ export default function App(){
                 const slBorder="1px solid #000";
                 const slTH={padding:"8px 10px",fontSize:12,fontWeight:700,color:"#000",background:"#fff",textAlign:"left",border:slBorder};
                 const slTD={padding:"8px 10px",fontSize:12,color:"#000",border:slBorder,verticalAlign:"top",lineHeight:1.5};
+                const cellVal=(i,field,def)=>slEdits[`${i}_${field}`]!==undefined?slEdits[`${i}_${field}`]:def;
+                const setCell=(i,field,val)=>sSlEdits(e=>({...e,[`${i}_${field}`]:val}));
+                const EditCell=({rowIdx,field,defaultVal,style={}})=>slConfirmed
+                  ?<span>{cellVal(rowIdx,field,defaultVal)||"—"}</span>
+                  :<input value={cellVal(rowIdx,field,defaultVal)||""} onChange={e=>setCell(rowIdx,field,e.target.value)} style={{border:"none",borderBottom:"1px dashed #ccc",width:"100%",fontFamily:"Arial,sans-serif",fontSize:12,color:"#000",outline:"none",background:"transparent",...style}}/>;
                 return <div>
-                  {/* Header */}
                   {slResult.length===0&&<div style={{background:"#450a0a",border:`1px solid ${BORDER}`,borderRadius:10,padding:"14px 18px",marginBottom:14,fontSize:13,color:"#f87171"}}>No opportunities matched those criteria. Try widening your filters.</div>}
-                  {/* Table */}
-                  {visible.length>0&&<div className="table-wrap" style={{background:"#fff",border:"1px solid #000",borderRadius:6,overflow:"hidden"}}>
-                    <div style={{padding:"16px",borderBottom:"1px solid #000",background:"#fff",textAlign:"center"}}>
-                      <div style={{fontSize:16,fontWeight:700,color:"#000",letterSpacing:"0.03em"}}>APPLICATION SHORTLIST FOR {(slForm.name||"—").toUpperCase()} ({fmtOrdinalDate(new Date())})</div>
+                  {visible.length>0&&<div>
+                    {/* Action bar — hidden when confirmed */}
+                    {!slConfirmed&&<div style={{display:"flex",gap:10,marginBottom:12,justifyContent:"flex-end"}}>
+                      <div style={{fontSize:12,color:"#6b7280",alignSelf:"center"}}>Click any cell to edit before confirming</div>
+                      <button onClick={()=>sSlConfirmed(true)} style={{background:"#16a34a",border:"none",borderRadius:6,padding:"9px 20px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✓ Confirm Shortlist</button>
+                    </div>}
+                    {slConfirmed&&<div style={{display:"flex",gap:10,marginBottom:12,justifyContent:"flex-end"}}>
+                      <button onClick={()=>sSlConfirmed(false)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"8px 16px",color:"#9ca3af",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✎ Edit</button>
+                    </div>}
+                    <div className="table-wrap" style={{background:"#fff",border:"1px solid #000",borderRadius:6,overflow:"hidden"}}>
+                      <div style={{padding:"16px",borderBottom:"1px solid #000",background:"#fff",textAlign:"center"}}>
+                        <div style={{fontSize:16,fontWeight:700,color:"#000",letterSpacing:"0.03em"}}>APPLICATION SHORTLIST FOR {(slForm.name||"—").toUpperCase()} ({fmtOrdinalDate(new Date())})</div>
+                      </div>
+                      <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
+                        <colgroup>
+                          <col style={{width:"15%"}}/>
+                          <col style={{width:"18%"}}/>
+                          <col style={{width:"12%"}}/>
+                          <col style={{width:"10%"}}/>
+                          <col style={{width:"12%"}}/>
+                          <col style={{width:"29%"}}/>
+                          {!slConfirmed&&<col style={{width:"4%"}}/>}
+                        </colgroup>
+                        <thead>
+                          <tr>
+                            <th style={slTH}>School</th>
+                            <th style={slTH}>Relevant Programmes</th>
+                            <th style={slTH}>Tuition</th>
+                            <th style={slTH}>App Fee</th>
+                            <th style={slTH}>Deadline</th>
+                            <th style={slTH}>Notes</th>
+                            {!slConfirmed&&<th style={{...slTH,padding:4}}></th>}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {slResult.map((o,i)=>{
+                            if(slRemoved.has(i)) return null;
+                            const all=o.programme.split(",").map(p=>p.trim()).filter(Boolean);
+                            const matched=slForm.programme?all.filter(p=>matchesProgramme(p,slForm.programme)):all.slice(0,3);
+                            const noteParts=[o.english&&o.english.trim().toLowerCase()!=="none"?`🌐 ${o.english}`:null,o.appNotes&&o.appNotes.trim().toLowerCase()!=="none"?`📝 ${o.appNotes}`:null].filter(Boolean);
+                            const defaultNotes=noteParts.join(" | ");
+                            const calls=parsePeriodCalls(o.period);
+                            const deadlineText=calls.length===0?(o.period||"—"):calls.length===1?fmtShortDate(calls[0].close):calls.map((c,ci)=>`Call ${ci+1}: ${fmtShortDate(c.close)}`).join(" | ");
+                            return (
+                              <tr key={i}>
+                                <td style={{...slTD,fontWeight:600}}>
+                                  <EditCell rowIdx={i} field="school" defaultVal={o.school} style={{fontWeight:600}}/>
+                                  {o.country&&<div style={{fontSize:11,color:"#555",fontWeight:400,marginTop:2}}>{o.country}</div>}
+                                </td>
+                                <td style={slTD}>
+                                  <EditCell rowIdx={i} field="programmes" defaultVal={matched.length>0?matched.join("; "):"—"}/>
+                                </td>
+                                <td style={slTD}><EditCell rowIdx={i} field="tuition" defaultVal={o.tuition||"—"}/></td>
+                                <td style={slTD}><EditCell rowIdx={i} field="fee" defaultVal={o.fee||"—"}/></td>
+                                <td style={slTD}><EditCell rowIdx={i} field="deadline" defaultVal={deadlineText}/></td>
+                                <td style={slTD}><EditCell rowIdx={i} field="notes" defaultVal={defaultNotes||"—"}/></td>
+                                {!slConfirmed&&<td style={{...slTD,textAlign:"center",padding:4}}>
+                                  <button onClick={()=>sSlRemoved(s=>{const n=new Set(s);n.add(i);return n;})} title="Remove" style={{background:"none",border:"1px solid #ccc",borderRadius:4,padding:"2px 5px",color:"#999",fontSize:10,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button>
+                                </td>}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     </div>
-                    <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
-                      <colgroup>
-                        <col style={{width:"15%"}}/>
-                        <col style={{width:"18%"}}/>
-                        <col style={{width:"13%"}}/>
-                        <col style={{width:"11%"}}/>
-                        <col style={{width:"10%"}}/>
-                        <col style={{width:"29%"}}/>
-                        <col style={{width:"4%"}}/>
-                      </colgroup>
-                      <thead>
-                        <tr>
-                          <th style={slTH}>School</th>
-                          <th style={slTH}>Relevant Programmes</th>
-                          <th style={slTH}>Tuition</th>
-                          <th style={slTH}>Application Fee</th>
-                          <th style={slTH}>Application Period</th>
-                          <th style={slTH}>Notes</th>
-                          <th style={{...slTH,padding:4}}></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {slResult.map((o,i)=>{
-                          if(slRemoved.has(i)) return null;
-                          const all=o.programme.split(",").map(p=>p.trim()).filter(Boolean);
-                          const matched=slForm.programme?all.filter(p=>matchesProgramme(p,slForm.programme)):all.slice(0,3);
-                          const noteParts=[o.english&&o.english.trim().toLowerCase()!=="none"?`🌐 ${o.english}`:null,o.appNotes&&o.appNotes.trim().toLowerCase()!=="none"?`📝 ${o.appNotes}`:null].filter(Boolean);
-                          const notes=noteParts.join(" | ");
-                          return (
-                            <tr key={i}>
-                              <td style={{...slTD,fontWeight:600}}>
-                                {o.school}
-                                {o.country&&<div style={{fontSize:11,color:"#555",fontWeight:400,marginTop:2}}>{o.country}</div>}
-                              </td>
-                              <td style={slTD}>
-                                {matched.length>0?matched.join("; "):<span style={{color:"#999"}}>—</span>}
-                              </td>
-                              <td style={{...slTD,fontWeight:o.type==="Fully Funded"?700:400}}>{o.tuition||"—"}</td>
-                              <td style={slTD}>{o.fee||"—"}</td>
-                              <td style={slTD}>{o.period||"—"}</td>
-                              <td style={slTD}>{notes||"—"}</td>
-                              <td style={{...slTD,textAlign:"center",padding:4}}>
-                                <button onClick={()=>sSlRemoved(s=>{const n=new Set(s);n.add(i);return n;})} title="Remove" style={{background:"none",border:"1px solid #ccc",borderRadius:4,padding:"2px 5px",color:"#999",fontSize:10,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
                   </div>}
                   {visible.length===0&&slResult.length>0&&<div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"40px",textAlign:"center",color:"#4b5563",fontSize:13}}>All rows removed. Click <strong>Clear & Reset</strong> to start over.</div>}
                 </div>;
