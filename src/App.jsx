@@ -190,7 +190,7 @@ function Login(){
       <div style={{width:420}}>
         <div style={{textAlign:"center",marginBottom:40}}>
           <img src={LOGO} alt="JapaGuys" style={{height:44,marginBottom:24,mixBlendMode:"screen"}}/>
-          <div style={{color:"#6b7280",fontSize:13}}>Operations Dashboard — Internal Access Only</div>
+          <div style={{color:"#6b7280",fontSize:13}}>Operations Dashboard - Internal Access Only</div>
         </div>
         <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:12,padding:"36px 32px"}}>
           <div style={{marginBottom:18}}><label style={{fontSize:12,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:8,fontWeight:600}}>Email</label><input value={e} onChange={x=>sE(x.target.value)} type="email" placeholder="you@japaguys.com" onKeyDown={x=>x.key==="Enter"&&go()} style={inp}/></div>
@@ -374,7 +374,7 @@ export default function App(){
 
   // Format deadline date for display — show only the end date
   const fmtDeadline = (period) => {
-    if(!period) return "—";
+    if(!period) return "-";
     const v = period.trim();
     if(v.includes("T00:00:00")){ const d=new Date(v); if(!isNaN(d)) return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); }
     const d = parseDeadline(v);
@@ -473,20 +473,26 @@ export default function App(){
               <span style={{color:BLUE}}>{sel.id}</span>
             </div>}
             <div style={{fontSize:12,color:BLUE,fontWeight:700,letterSpacing:"0.08em",marginBottom:4,textTransform:"uppercase"}}>{gr}, {nm} 👋</div>
-            <div style={{fontSize:26,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"-0.01em"}}>{view==="summary"?`Overview — ${season} Intake`:view==="clients"?"All Clients":view==="opportunities"?"Opportunities":sel?.name||""}</div>
+            <div style={{fontSize:26,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"-0.01em"}}>{view==="summary"?`Overview - ${season} Intake`:view==="clients"?"All Clients":view==="opportunities"?"Opportunities":sel?.name||""}</div>
           </div>
-          <div className="topbar-right" style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:10}}>
-            <div style={{textAlign:"right"}}>
-              <div style={{fontSize:22,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"0.05em"}}>{fT(now)}</div>
-              <div style={{fontSize:12,color:"#6b7280",marginTop:3}}>{fD(now)}</div>
-            </div>
-            <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:8,padding:4,display:"flex",gap:4}}>
-              {["2027","2026"].map(y=>(
-                <button key={y} onClick={()=>{setSeason(y);sSel(null);sV("summary");}} style={{padding:"7px 16px",borderRadius:6,border:"none",fontFamily:"Arial,sans-serif",fontWeight:700,fontSize:13,cursor:"pointer",transition:"all 0.15s",background:season===y?BLUE:"transparent",color:season===y?"#fff":"#6b7280"}}>
-                  {y} Intake
-                </button>
-              ))}
-            </div>
+          <div className="topbar-right" style={{textAlign:"right"}}>
+            <div style={{fontSize:22,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"0.05em"}}>{fT(now)}</div>
+            <div style={{fontSize:12,color:"#6b7280",marginTop:3}}>{fD(now)}</div>
+          </div>
+        </div>
+
+        {/* ── SEASON TOGGLE ── always visible, full width */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"12px 18px",marginBottom:22}}>
+          <div>
+            <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600,marginBottom:2}}>Application Season</div>
+            <div style={{fontSize:13,color:"#9ca3af"}}>Showing data for <strong style={{color:"#f9fafb"}}>{season} Intake</strong></div>
+          </div>
+          <div style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:8,padding:4,display:"flex",gap:4}}>
+            {["2027","2026"].map(y=>(
+              <button key={y} onClick={()=>{setSeason(y);sSel(null);sV("summary");}} style={{padding:"9px 22px",borderRadius:6,border:"none",fontFamily:"Arial,sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",transition:"all 0.15s",background:season===y?BLUE:"transparent",color:season===y?"#fff":"#6b7280",letterSpacing:"0.02em"}}>
+                {y} Intake
+              </button>
+            ))}
           </div>
         </div>
 
@@ -496,8 +502,8 @@ export default function App(){
             <MC label="Total Clients"      value={tc}             accent={BLUE}/>
             <MC label="Total Applications" value={tot}            accent="#3b82f6"/>
             <MC label="Submitted"          value={sub}            accent="#10b981"/>
-            <MC label="Pending — Us"       value={pU}             accent="#f97316"/>
-            <MC label="Pending — Client"   value={pC}             accent="#f59e0b"/>
+            <MC label="Pending - Us"       value={pU}             accent="#f97316"/>
+            <MC label="Pending - Client"   value={pC}             accent="#f59e0b"/>
             <MC label="Not Started"        value={nS}             accent="#6b7280"/>
             <MC label="Admitted"           value={adm}            accent="#8b5cf6"/>
             <MC label="Denied"             value={den}            accent="#ef4444"/>
@@ -507,8 +513,8 @@ export default function App(){
             <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:22}}>
               <div style={{fontWeight:700,color:"#f9fafb",marginBottom:18,fontSize:14,letterSpacing:"0.02em"}}>Our Progress</div>
               <PB label="Submitted"           val={sub} total={tot} color={BLUE}/>
-              <PB label="Pending — Us"        val={pU}  total={tot} color="#f97316"/>
-              <PB label="Pending — Applicant" val={pC}  total={tot} color="#f59e0b"/>
+              <PB label="Pending - Us"        val={pU}  total={tot} color="#f97316"/>
+              <PB label="Pending - Applicant" val={pC}  total={tot} color="#f59e0b"/>
               <PB label="Not Started"         val={nS}  total={tot} color="#6b7280"/>
             </div>
             <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:22}}>
@@ -706,9 +712,9 @@ export default function App(){
                       <td style={TD}><span style={{background:"#0d2d6b",color:"#93c5fd",padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:600}}>{o.country}</span></td>
                       <td style={{...TD,fontSize:12,color:"#9ca3af"}}>{o.level}</td>
                       <td style={{...TD,fontSize:12,color:o.type==="Fully Funded"?"#34d399":"#d1d5db",fontWeight:o.type==="Fully Funded"?700:400}}>{o.type}</td>
-                      <td style={{...TD,fontSize:12,color:"#d1d5db"}}>{o.tuition||"—"}</td>
-                      <td style={{...TD,fontSize:12,color:o.feeMax===0?"#34d399":"#d1d5db"}}>{o.fee||"—"}</td>
-                      <td style={{...TD,fontSize:12,color:"#9ca3af"}}>{o.period||"—"}</td>
+                      <td style={{...TD,fontSize:12,color:"#d1d5db"}}>{o.tuition||"-"}</td>
+                      <td style={{...TD,fontSize:12,color:o.feeMax===0?"#34d399":"#d1d5db"}}>{o.fee||"-"}</td>
+                      <td style={{...TD,fontSize:12,color:"#9ca3af"}}>{o.period||"-"}</td>
                     </tr>
                   ))}
                   {filteredOpps.length===0&&<tr><td colSpan={8} style={{...TD,textAlign:"center",color:"#4b5563",padding:"40px"}}>No opportunities match the current filters.</td></tr>}
@@ -753,8 +759,8 @@ export default function App(){
                           <td style={TD}><span style={{background:"#0d2d6b",color:"#93c5fd",padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:600}}>{o.country}</span></td>
                           <td style={{...TD,fontSize:12,color:"#9ca3af"}}>{o.level}</td>
                           <td style={{...TD,fontSize:12,color:o.type==="Fully Funded"?"#34d399":"#d1d5db",fontWeight:o.type==="Fully Funded"?700:400}}>{o.type}</td>
-                          <td style={{...TD,fontSize:12}}>{o.tuition||"—"}</td>
-                          <td style={{...TD,fontSize:12}}>{o.fee||"—"}</td>
+                          <td style={{...TD,fontSize:12}}>{o.tuition||"-"}</td>
+                          <td style={{...TD,fontSize:12}}>{o.fee||"-"}</td>
                           <td style={{...TD,fontSize:12,color:call?"#34d399":"#fbbf24"}}>
                             {call?`${fmtShortDate(call.open)} – ${fmtShortDate(call.close)}`:o.period}
                           </td>
@@ -780,7 +786,7 @@ export default function App(){
               </div>
               <div style={{fontSize:13,fontWeight:700,color:"#34d399",marginBottom:8}}>🟢 Open Now ({filteredNow.length})</div>
               <OppTable rows={filteredNow} emptyMsg="No currently open opportunities match the filters." getCall={o=>parsePeriodCalls(o.period).find(c=>today>=c.open&&today<=c.close)}/>
-              <div style={{fontSize:13,fontWeight:700,color:"#fbbf24",marginBottom:8}}>🟡 Opening Soon — within {openMonths} month{openMonths>1?"s":""} ({filteredSoon.length})</div>
+              <div style={{fontSize:13,fontWeight:700,color:"#fbbf24",marginBottom:8}}>🟡 Opening Soon - within {openMonths} month{openMonths>1?"s":""} ({filteredSoon.length})</div>
               <OppTable rows={filteredSoon} emptyMsg={`No opportunities opening in the next ${openMonths} month${openMonths>1?"s":""}.`} getCall={o=>parsePeriodCalls(o.period).find(c=>c.open>today&&c.open<=future)}/>
             </div>;
           })()}
@@ -858,12 +864,12 @@ export default function App(){
       const cellVal=(i,field,def)=>slEdits[`${i}_${field}`]!==undefined?slEdits[`${i}_${field}`]:def;
       const setCell=(i,field,val)=>sSlEdits(e=>({...e,[`${i}_${field}`]:val}));
       const EditCell=({rowIdx,field,defaultVal,style={}})=>slConfirmed
-        ?<span>{cellVal(rowIdx,field,defaultVal)||"—"}</span>
+        ?<span>{cellVal(rowIdx,field,defaultVal)||"-"}</span>
         :<input value={cellVal(rowIdx,field,defaultVal)||""} onChange={e=>setCell(rowIdx,field,e.target.value)} style={{border:"none",borderBottom:"1px dashed #aaa",width:"100%",fontFamily:"Arial,sans-serif",fontSize:12,color:"#000",outline:"none",background:"transparent",...style}}/>;
       return <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",flexDirection:"column",fontFamily:"Arial,sans-serif"}}>
         {/* Modal toolbar */}
         <div style={{background:"#0f1923",borderBottom:`1px solid ${BORDER}`,padding:"12px 24px",display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
-          <div style={{flex:1,fontSize:13,color:"#f9fafb",fontWeight:600}}>Shortlist — {(slForm.name||"—")} · {visible.length} {visible.length===1?"row":"rows"}</div>
+          <div style={{flex:1,fontSize:13,color:"#f9fafb",fontWeight:600}}>Shortlist - {(slForm.name||"-")} · {visible.length} {visible.length===1?"row":"rows"}</div>
           {!slConfirmed&&<><div style={{fontSize:12,color:"#6b7280"}}>Click any cell to edit</div>
           <button onClick={()=>sSlConfirmed(true)} style={{background:"#16a34a",border:"none",borderRadius:6,padding:"8px 18px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✓ Confirm</button></>}
           {slConfirmed&&<button onClick={()=>sSlConfirmed(false)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"7px 14px",color:"#9ca3af",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✎ Edit</button>}
@@ -874,7 +880,7 @@ export default function App(){
           {slResult.length===0&&<div style={{background:"#450a0a",borderRadius:10,padding:"14px 18px",marginBottom:14,fontSize:13,color:"#f87171"}}>No opportunities matched those criteria. Try widening your filters.</div>}
           {visible.length>0&&<div style={{background:"#fff",border:"1px solid #000",borderRadius:6,overflow:"hidden"}}>
             <div style={{padding:"18px",borderBottom:"1px solid #000",background:"#fff",textAlign:"center"}}>
-              <div style={{fontSize:17,fontWeight:700,color:"#000",letterSpacing:"0.03em"}}>APPLICATION SHORTLIST FOR {(slForm.name||"—").toUpperCase()} ({fmtOrdinalDate(new Date())})</div>
+              <div style={{fontSize:17,fontWeight:700,color:"#000",letterSpacing:"0.03em"}}>APPLICATION SHORTLIST FOR {(slForm.name||"-").toUpperCase()} ({fmtOrdinalDate(new Date())})</div>
             </div>
             <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
               <colgroup>
@@ -890,18 +896,18 @@ export default function App(){
                   const matched=slForm.programme?all.filter(p=>matchesProgramme(p,slForm.programme)):all.slice(0,3);
                   const noteParts=[o.english&&o.english.trim().toLowerCase()!=="none"?`🌐 ${o.english}`:null,o.appNotes&&o.appNotes.trim().toLowerCase()!=="none"?`📝 ${o.appNotes}`:null].filter(Boolean);
                   const calls=parsePeriodCalls(o.period);
-                  const deadlineText=calls.length===0?(o.period||"—"):calls.length===1?fmtShortDate(calls[0].close):calls.map((c,ci)=>`Call ${ci+1}: ${fmtShortDate(c.close)}`).join(" | ");
+                  const deadlineText=calls.length===0?(o.period||"-"):calls.length===1?fmtShortDate(calls[0].close):calls.map((c,ci)=>`Call ${ci+1}: ${fmtShortDate(c.close)}`).join(" | ");
                   return(
                     <tr key={i}>
                       <td style={{...slTD,fontWeight:600}}>
                         <EditCell rowIdx={i} field="school" defaultVal={o.school} style={{fontWeight:600}}/>
                         {o.country&&<div style={{fontSize:11,color:"#555",fontWeight:400,marginTop:2}}>{o.country}</div>}
                       </td>
-                      <td style={slTD}><EditCell rowIdx={i} field="programmes" defaultVal={matched.length>0?matched.join("; "):"—"}/></td>
-                      <td style={slTD}><EditCell rowIdx={i} field="tuition" defaultVal={o.tuition||"—"}/></td>
-                      <td style={slTD}><EditCell rowIdx={i} field="fee" defaultVal={o.fee||"—"}/></td>
+                      <td style={slTD}><EditCell rowIdx={i} field="programmes" defaultVal={matched.length>0?matched.join("; "):"-"}/></td>
+                      <td style={slTD}><EditCell rowIdx={i} field="tuition" defaultVal={o.tuition||"-"}/></td>
+                      <td style={slTD}><EditCell rowIdx={i} field="fee" defaultVal={o.fee||"-"}/></td>
                       <td style={slTD}><EditCell rowIdx={i} field="deadline" defaultVal={deadlineText}/></td>
-                      <td style={slTD}><EditCell rowIdx={i} field="notes" defaultVal={noteParts.join(" | ")||"—"}/></td>
+                      <td style={slTD}><EditCell rowIdx={i} field="notes" defaultVal={noteParts.join(" | ")||"-"}/></td>
                       {!slConfirmed&&<td style={{...slTD,textAlign:"center",padding:4}}>
                         <button onClick={()=>sSlRemoved(s=>{const n=new Set(s);n.add(i);return n;})} style={{background:"none",border:"1px solid #ccc",borderRadius:4,padding:"2px 5px",color:"#999",fontSize:10,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button>
                       </td>}
