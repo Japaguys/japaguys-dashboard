@@ -769,38 +769,64 @@ export default function App(){
             </div>;
           })()}
 
-          {oppTab==="shortlist"&&<div style={{display:"flex",justifyContent:"center"}}>
-            <div style={{width:"100%",maxWidth:480,background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"24px 22px"}}>
-              <div style={{fontWeight:700,color:"#f9fafb",fontSize:15,marginBottom:18}}>Shortlist Criteria</div>
-              <div style={{marginBottom:12}}><label style={lbl}>Client Name</label><input value={slForm.name} onChange={e=>sSlForm(f=>({...f,name:e.target.value}))} placeholder="e.g. John Doe" style={finp}/></div>
-              <div style={{marginBottom:12}}>
-                <label style={lbl}>Countries of Interest</label>
-                <div style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"8px 10px",maxHeight:160,overflowY:"auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"2px 8px"}}>
+          {oppTab==="shortlist"&&<div>
+            {/* Top row: client name + quick filters */}
+            <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"20px 22px",marginBottom:14}}>
+              <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr",gap:14,alignItems:"end"}}>
+                <div>
+                  <label style={lbl}>Client Name</label>
+                  <input value={slForm.name} onChange={e=>sSlForm(f=>({...f,name:e.target.value}))} placeholder="e.g. John Doe" style={finp}/>
+                </div>
+                <div>
+                  <label style={lbl}>Level</label>
+                  <select value={slForm.level} onChange={e=>sSlForm(f=>({...f,level:e.target.value}))} style={finp}><option value="">Any</option><option>Bachelors</option><option>Masters</option><option>PhD</option></select>
+                </div>
+                <div>
+                  <label style={lbl}>Funding</label>
+                  <select value={slForm.funding} onChange={e=>sSlForm(f=>({...f,funding:e.target.value}))} style={finp}><option value="">Any</option><option>Fully Funded</option><option>Self Paid Tuition</option></select>
+                </div>
+                <div>
+                  <label style={lbl}>Max Tuition (EUR)</label>
+                  <input type="number" value={slForm.maxTuition} onChange={e=>sSlForm(f=>({...f,maxTuition:e.target.value}))} placeholder="e.g. 5000" style={finp}/>
+                </div>
+                <div>
+                  <label style={lbl}>Max App Fee (EUR)</label>
+                  <input type="number" value={slForm.maxFee} onChange={e=>sSlForm(f=>({...f,maxFee:e.target.value}))} placeholder="e.g. 100" style={finp}/>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom row: countries + programme + actions */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+              {/* Countries */}
+              <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"18px 20px"}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                  <label style={{...lbl,marginBottom:0}}>Countries of Interest</label>
+                  {slForm.countries.length>0&&<button onClick={()=>sSlForm(f=>({...f,countries:[]}))} style={{background:"none",border:"none",color:"#6b7280",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif",padding:0}}>{slForm.countries.length} selected · clear</button>}
+                </div>
+                <div style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"10px 12px",display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"4px 12px",maxHeight:200,overflowY:"auto"}}>
                   {oppCountries.map(c=>(
-                    <label key={c} style={{display:"flex",alignItems:"center",gap:6,padding:"3px 0",cursor:"pointer",fontSize:13,color:"#d1d5db"}}>
-                      <input type="checkbox" checked={slForm.countries.includes(c)} onChange={e=>sSlForm(f=>({...f,countries:e.target.checked?[...f.countries,c]:f.countries.filter(x=>x!==c)}))} style={{accentColor:BLUE}}/>
+                    <label key={c} style={{display:"flex",alignItems:"center",gap:6,padding:"3px 0",cursor:"pointer",fontSize:12,color:"#d1d5db",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                      <input type="checkbox" checked={slForm.countries.includes(c)} onChange={e=>sSlForm(f=>({...f,countries:e.target.checked?[...f.countries,c]:f.countries.filter(x=>x!==c)}))} style={{accentColor:BLUE,flexShrink:0}}/>
                       {c}
                     </label>
                   ))}
                 </div>
-                {slForm.countries.length>0&&<div style={{fontSize:11,color:BLUE,marginTop:4}}>{slForm.countries.length} selected · <button onClick={()=>sSlForm(f=>({...f,countries:[]}))} style={{background:"none",border:"none",color:"#6b7280",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif",padding:0}}>clear</button></div>}
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-                <div><label style={lbl}>Level</label><select value={slForm.level} onChange={e=>sSlForm(f=>({...f,level:e.target.value}))} style={finp}><option value="">Any</option><option>Bachelors</option><option>Masters</option><option>PhD</option></select></div>
-                <div><label style={lbl}>Funding</label><select value={slForm.funding} onChange={e=>sSlForm(f=>({...f,funding:e.target.value}))} style={finp}><option value="">Any</option><option>Fully Funded</option><option>Self Paid Tuition</option></select></div>
-                <div><label style={lbl}>Max Tuition (EUR)</label><input type="number" value={slForm.maxTuition} onChange={e=>sSlForm(f=>({...f,maxTuition:e.target.value}))} placeholder="e.g. 5000" style={finp}/></div>
-                <div><label style={lbl}>Max App Fee (EUR)</label><input type="number" value={slForm.maxFee} onChange={e=>sSlForm(f=>({...f,maxFee:e.target.value}))} placeholder="e.g. 100" style={finp}/></div>
+
+              {/* Programme + actions */}
+              <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"18px 20px",flex:1}}>
+                  <label style={lbl}>Programme / Field of Interest</label>
+                  <input value={slForm.programme} onChange={e=>sSlForm(f=>({...f,programme:e.target.value}))} placeholder="e.g. Computer Science, Nutrition" style={{...finp,marginBottom:6}}/>
+                  <div style={{fontSize:11,color:"#4b5563"}}>Related fields are automatically matched (e.g. "Food Science" also matches Nutrition, Dietetics, etc.)</div>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  <button onClick={generateShortlist} style={{width:"100%",background:BLUE,border:"none",borderRadius:8,padding:"14px",color:"#fff",fontWeight:700,fontSize:15,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Generate Shortlist →</button>
+                  {slResult&&<button onClick={()=>sSlShowModal(true)} style={{width:"100%",background:"#16a34a",border:"none",borderRadius:8,padding:"13px",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>View Shortlist ({slResult.filter((_,i)=>!slRemoved.has(i)).length} results) →</button>}
+                  {slResult&&<button onClick={()=>{sSlResult(null);sSlRemoved(new Set());sSlEdits({});sSlConfirmed(false);sSlShowModal(false);sSlForm({name:"",countries:[],level:"",funding:"",maxTuition:"",maxFee:"",programme:""}); }} style={{width:"100%",background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"11px",color:"#6b7280",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Clear & Reset</button>}
+                </div>
               </div>
-              <div style={{marginBottom:20}}>
-                <label style={lbl}>Programme / Field of Interest</label>
-                <input value={slForm.programme} onChange={e=>sSlForm(f=>({...f,programme:e.target.value}))} placeholder="e.g. Computer Science, Nutrition" style={finp}/>
-                <div style={{fontSize:11,color:"#4b5563",marginTop:4}}>Related fields are also matched</div>
-              </div>
-              <div style={{display:"flex",gap:10}}>
-                <button onClick={generateShortlist} style={{flex:1,background:BLUE,border:"none",borderRadius:6,padding:"12px",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Generate Shortlist →</button>
-                {slResult&&<button onClick={()=>sSlShowModal(true)} style={{flex:1,background:"#16a34a",border:"none",borderRadius:6,padding:"12px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>View Shortlist ({slResult.filter((_,i)=>!slRemoved.has(i)).length}) →</button>}
-              </div>
-              {slResult&&<button onClick={()=>{sSlResult(null);sSlRemoved(new Set());sSlEdits({});sSlConfirmed(false);sSlShowModal(false);sSlForm({name:"",countries:[],level:"",funding:"",maxTuition:"",maxFee:"",programme:""});}} style={{width:"100%",marginTop:8,background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"9px",color:"#6b7280",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Clear & Reset</button>}
             </div>
           </div>}
         </div>;
