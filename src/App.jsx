@@ -475,17 +475,17 @@ export default function App(){
             <div style={{fontSize:12,color:BLUE,fontWeight:700,letterSpacing:"0.08em",marginBottom:4,textTransform:"uppercase"}}>{gr}, {nm} 👋</div>
             <div style={{fontSize:26,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"-0.01em"}}>{view==="summary"?`Overview — ${season} Intake`:view==="clients"?"All Clients":view==="opportunities"?"Opportunities":sel?.name||""}</div>
           </div>
-          <div className="topbar-right" style={{textAlign:"right",display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8}}>
-            <div>
+          <div className="topbar-right" style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:10}}>
+            <div style={{textAlign:"right"}}>
               <div style={{fontSize:22,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"0.05em"}}>{fT(now)}</div>
               <div style={{fontSize:12,color:"#6b7280",marginTop:3}}>{fD(now)}</div>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <span style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600}}>Season</span>
-              <select value={season} onChange={e=>{setSeason(e.target.value);sSel(null);sV("summary");}} style={{background:"#0d2d6b",border:`1px solid ${BLUE}`,borderRadius:6,padding:"5px 10px",color:BLUE,fontSize:13,fontWeight:700,fontFamily:"Arial,sans-serif",outline:"none",cursor:"pointer"}}>
-                <option value="2027">2027 Intake</option>
-                <option value="2026">2026 Intake</option>
-              </select>
+            <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:8,padding:4,display:"flex",gap:4}}>
+              {["2027","2026"].map(y=>(
+                <button key={y} onClick={()=>{setSeason(y);sSel(null);sV("summary");}} style={{padding:"7px 16px",borderRadius:6,border:"none",fontFamily:"Arial,sans-serif",fontWeight:700,fontSize:13,cursor:"pointer",transition:"all 0.15s",background:season===y?BLUE:"transparent",color:season===y?"#fff":"#6b7280"}}>
+                  {y} Intake
+                </button>
+              ))}
             </div>
           </div>
         </div>
