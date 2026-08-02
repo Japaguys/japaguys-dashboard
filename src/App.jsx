@@ -707,19 +707,28 @@ export default function App(){
                   {slResult.length===0&&<div style={{background:"#450a0a",border:`1px solid ${BORDER}`,borderRadius:10,padding:"14px 18px",marginBottom:14,fontSize:13,color:"#f87171"}}>No opportunities matched those criteria. Try widening your filters.</div>}
                   {/* Table */}
                   {visible.length>0&&<div className="table-wrap" style={{background:"#fff",border:"1px solid #000",borderRadius:6,overflow:"hidden"}}>
-                    <div style={{padding:"14px 16px",borderBottom:"1px solid #000",background:"#fff"}}>
-                      <div style={{fontSize:13,fontWeight:700,color:"#000",letterSpacing:"0.03em"}}>APPLICATION SHORTLIST FOR {(slForm.name||"—").toUpperCase()} ({fmtOrdinalDate(new Date())})</div>
+                    <div style={{padding:"16px",borderBottom:"1px solid #000",background:"#fff",textAlign:"center"}}>
+                      <div style={{fontSize:16,fontWeight:700,color:"#000",letterSpacing:"0.03em"}}>APPLICATION SHORTLIST FOR {(slForm.name||"—").toUpperCase()} ({fmtOrdinalDate(new Date())})</div>
                     </div>
-                    <table style={{width:"100%",borderCollapse:"collapse"}}>
+                    <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
+                      <colgroup>
+                        <col style={{width:"15%"}}/>
+                        <col style={{width:"18%"}}/>
+                        <col style={{width:"13%"}}/>
+                        <col style={{width:"11%"}}/>
+                        <col style={{width:"10%"}}/>
+                        <col style={{width:"29%"}}/>
+                        <col style={{width:"4%"}}/>
+                      </colgroup>
                       <thead>
                         <tr>
-                          <th style={{...slTH,width:160}}>School</th>
+                          <th style={slTH}>School</th>
                           <th style={slTH}>Relevant Programmes</th>
-                          <th style={{...slTH,width:110}}>Tuition</th>
-                          <th style={{...slTH,width:110}}>Application Fee</th>
-                          <th style={{...slTH,width:100}}>Deadline</th>
-                          <th style={{...slTH,minWidth:220}}>Notes</th>
-                          <th style={{...slTH,width:40,border:slBorder}}></th>
+                          <th style={slTH}>Tuition</th>
+                          <th style={slTH}>Application Fee</th>
+                          <th style={slTH}>Deadline</th>
+                          <th style={slTH}>Notes</th>
+                          <th style={{...slTH,padding:4}}></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -739,10 +748,10 @@ export default function App(){
                               </td>
                               <td style={{...slTD,fontWeight:o.type==="Fully Funded"?700:400}}>{o.tuition||"—"}</td>
                               <td style={slTD}>{o.fee||"—"}</td>
-                              <td style={{...slTD,whiteSpace:"nowrap"}}>{fmtDeadline(o.period)||"—"}</td>
+                              <td style={slTD}>{fmtDeadline(o.period)||"—"}</td>
                               <td style={slTD}>{notes||"—"}</td>
-                              <td style={{...slTD,textAlign:"center"}}>
-                                <button onClick={()=>sSlRemoved(s=>{const n=new Set(s);n.add(i);return n;})} title="Remove" style={{background:"none",border:"1px solid #ccc",borderRadius:4,padding:"2px 6px",color:"#999",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button>
+                              <td style={{...slTD,textAlign:"center",padding:4}}>
+                                <button onClick={()=>sSlRemoved(s=>{const n=new Set(s);n.add(i);return n;})} title="Remove" style={{background:"none",border:"1px solid #ccc",borderRadius:4,padding:"2px 5px",color:"#999",fontSize:10,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button>
                               </td>
                             </tr>
                           );
