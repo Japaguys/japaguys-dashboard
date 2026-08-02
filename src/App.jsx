@@ -207,6 +207,7 @@ export default function App(){
   const [user,sU]=useState(null); const [ready,sR]=useState(false);
   const [data,sD]=useState(null); const [ld,sL]=useState(true);
   const [view,sV]=useState("summary"); const [sel,sSel]=useState(null);
+  const [season,setSeason]=useState("2027");
   const [search,sS]=useState(""); const [filt,sFilt]=useState({country:"",status:"",school:"",service:"",year:""});
   const [now,sN]=useState(new Date()); const [tab,sTab]=useState("applications");
   const [menuOpen,sMenu]=useState(false);
@@ -311,7 +312,7 @@ export default function App(){
       const appRows = raw.applicants.slice(2).filter(r=>r[0]&&String(r[0]).trim());
       const applicants = appRows.map((r,i)=>{
         const payable=Number(r[7])||0, paid=Number(r[8])||0;
-        return { id:`JAP${String(i+1).padStart(3,"0")}`, name:String(r[0]||"").trim(), email:String(r[1]||"").trim(), phone:String(r[2]||"").trim(), address:String(r[3]||"").trim(), level:String(r[4]||"").trim(), field:String(r[5]||"").trim(), service:String(r[6]||"").trim(), payable, paid, outstanding:payable-paid, documents:r[10]?String(r[10]).split(",").map(d=>d.trim()).filter(Boolean):[], year:String(r[11]||"").trim(), lastContacted:String(r[12]||"").trim(), lastContactNotes:String(r[13]||"").trim() };
+        return { id:`JAP${String(i+1).padStart(3,"0")}`, name:String(r[0]||"").trim(), email:String(r[1]||"").trim(), phone:String(r[2]||"").trim(), address:String(r[3]||"").trim(), level:String(r[4]||"").trim(), field:String(r[5]||"").trim(), service:String(r[6]||"").trim(), payable, paid, outstanding:payable-paid, documents:r[10]?String(r[10]).split(",").map(d=>d.trim()).filter(Boolean):[], year:String(r[11]||"").trim(), lastContacted:String(r[12]||"").trim(), lastContactNotes:String(r[13]||"").trim(), season:String(r[14]||"2026").trim() };
       });
       const appliRows = raw.applications.slice(2).filter(r=>r[0]&&r[1]);
       const applications = appliRows.map(r=>({
@@ -343,7 +344,13 @@ export default function App(){
     </div>
   );
 
-  const {applicants,applications,opportunities=[]}=data;
+  const {applicants:allApplicants,applications:allApplications,opportunities=[]}=data;
+  const applicants=allApplicants.filter(a=>a.season===season);
+  const applications=allApplications.filter(a=>{
+    const client=allApplicants.find(ap=>ap.name.toLowerCase()===a.clientName.toLowerCase());
+    return client?client.season===season:false;
+  });
+
   const tot=applications.length, tc=applicants.length;
   const sub=applications.filter(a=>a.ourProgress==="Submitted").length;
   const pC =applications.filter(a=>a.ourProgress==="Pending - Applicant").length;
@@ -466,11 +473,20 @@ export default function App(){
               <span style={{color:BLUE}}>{sel.id}</span>
             </div>}
             <div style={{fontSize:12,color:BLUE,fontWeight:700,letterSpacing:"0.08em",marginBottom:4,textTransform:"uppercase"}}>{gr}, {nm} 👋</div>
-            <div style={{fontSize:26,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"-0.01em"}}>{view==="summary"?"Overview":view==="clients"?"All Clients":view==="opportunities"?"Opportunities":sel?.name||""}</div>
+            <div style={{fontSize:26,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"-0.01em"}}>{view==="summary"?`Overview — ${season} Intake`:view==="clients"?"All Clients":view==="opportunities"?"Opportunities":sel?.name||""}</div>
           </div>
-          <div className="topbar-right" style={{textAlign:"right"}}>
-            <div style={{fontSize:22,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"0.05em"}}>{fT(now)}</div>
-            <div style={{fontSize:12,color:"#6b7280",marginTop:3}}>{fD(now)}</div>
+          <div className="topbar-right" style={{textAlign:"right",display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8}}>
+            <div>
+              <div style={{fontSize:22,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"0.05em"}}>{fT(now)}</div>
+              <div style={{fontSize:12,color:"#6b7280",marginTop:3}}>{fD(now)}</div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600}}>Season</span>
+              <select value={season} onChange={e=>{setSeason(e.target.value);sSel(null);sV("summary");}} style={{background:"#0d2d6b",border:`1px solid ${BLUE}`,borderRadius:6,padding:"5px 10px",color:BLUE,fontSize:13,fontWeight:700,fontFamily:"Arial,sans-serif",outline:"none",cursor:"pointer"}}>
+                <option value="2027">2027 Intake</option>
+                <option value="2026">2026 Intake</option>
+              </select>
+            </div>
           </div>
         </div>
 
