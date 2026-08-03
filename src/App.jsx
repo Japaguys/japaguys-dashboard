@@ -481,8 +481,8 @@ export default function App(){
           </div>
         </div>
 
-        {/* ── SEASON TOGGLE ── always visible, full width */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"12px 18px",marginBottom:22}}>
+        {/* ── SEASON TOGGLE ── hidden on opportunities */}
+        <div style={{display:view==="opportunities"?"none":"flex",alignItems:"center",justifyContent:"space-between",background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"12px 18px",marginBottom:22}}>
           <div>
             <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600,marginBottom:2}}>Application Season</div>
             <div style={{fontSize:13,color:"#9ca3af"}}>Showing data for <strong style={{color:"#f9fafb"}}>{season} Intake</strong></div>
