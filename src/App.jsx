@@ -429,7 +429,7 @@ export default function App(){
   const TD = {padding:"12px 16px",fontSize:13,color:"#d1d5db",borderBottom:`1px solid ${BORDER}`,verticalAlign:"middle"};
 
   return <>
-    <style>{`@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box;margin:0;padding:0}html,body{max-width:100%;overflow-x:hidden}body{background:${BG};font-family:Arial,sans-serif}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:${BG}}::-webkit-scrollbar-thumb{background:${BORDER};border-radius:3px}input::placeholder{color:#374151}select option{background:#0f1923}.hamburger{display:none!important}@media(max-width:768px){.hamburger{display:flex!important}.sidebar{transform:translateX(-100%);transition:transform 0.25s}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0!important;padding:64px 12px 20px!important;width:100%!important;max-width:100vw!important;overflow-x:hidden!important;box-sizing:border-box!important}.metric-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}.chart-grid{grid-template-columns:1fr!important}.client-grid{grid-template-columns:1fr!important}.filter-row{flex-direction:column!important}.filter-row select,.filter-row input{width:100%!important}table{font-size:11px;width:100%!important}.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}table td,table th{padding:8px 6px!important;white-space:nowrap}.topbar-right{display:none!important}.greeting-bar{margin-bottom:16px!important}.countries-cards{display:flex!important}.countries-table{display:none!important}.sl-top-row{grid-template-columns:1fr!important}.sl-bottom-row{grid-template-columns:1fr!important}.sl-countries-grid{grid-template-columns:1fr 1fr!important}}`}</style>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box;margin:0;padding:0}html,body{max-width:100%;overflow-x:hidden}body{background:${BG};font-family:Arial,sans-serif}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:${BG}}::-webkit-scrollbar-thumb{background:${BORDER};border-radius:3px}input::placeholder{color:#374151}select option{background:#0f1923}.hamburger{display:none!important}@media(max-width:768px){.hamburger{display:flex!important}.sidebar{transform:translateX(-100%);transition:transform 0.25s}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0!important;padding:64px 12px 20px!important;width:100%!important;max-width:100vw!important;overflow-x:hidden!important;box-sizing:border-box!important}.metric-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}.chart-grid{grid-template-columns:1fr!important}.client-grid{grid-template-columns:1fr!important}.filter-row{flex-direction:column!important}.filter-row select,.filter-row input{width:100%!important}table{font-size:11px;width:100%!important}.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}table td,table th{padding:8px 6px!important;white-space:nowrap}.topbar-right{display:none!important}.greeting-bar{margin-bottom:16px!important}.countries-cards{display:flex!important}.countries-table{display:none!important}.sl-top-row{grid-template-columns:1fr!important}.sl-bottom-row{grid-template-columns:1fr!important}.sl-countries-grid{grid-template-columns:1fr 1fr!important}.sl-modal-body{padding:12px!important}.sl-modal-toolbar{padding:10px 12px!important;flex-wrap:wrap;gap:8px!important}.sl-modal-toolbar .sl-toolbar-hint{display:none!important}.sl-table-view{display:none!important}.sl-card-view{display:flex!important}}`}</style>
     <div style={{display:"flex",minHeight:"100vh",fontFamily:"Arial,sans-serif",background:BG,color:"#f9fafb"}}>
       {/* MOBILE OVERLAY */}
       {menuOpen&&<div onClick={()=>sMenu(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:150,cursor:"pointer"}}/>}
@@ -868,54 +868,83 @@ export default function App(){
         :<input value={cellVal(rowIdx,field,defaultVal)||""} onChange={e=>setCell(rowIdx,field,e.target.value)} style={{border:"none",borderBottom:"1px dashed #aaa",width:"100%",fontFamily:"Arial,sans-serif",fontSize:12,color:"#000",outline:"none",background:"transparent",...style}}/>;
       return <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",flexDirection:"column",fontFamily:"Arial,sans-serif"}}>
         {/* Modal toolbar */}
-        <div style={{background:"#0f1923",borderBottom:`1px solid ${BORDER}`,padding:"12px 24px",display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
+        <div className="sl-modal-toolbar" style={{background:"#0f1923",borderBottom:`1px solid ${BORDER}`,padding:"12px 24px",display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
           <div style={{flex:1,fontSize:13,color:"#f9fafb",fontWeight:600}}>Shortlist - {(slForm.name||"-")} · {visible.length} {visible.length===1?"row":"rows"}</div>
-          {!slConfirmed&&<><div style={{fontSize:12,color:"#6b7280"}}>Click any cell to edit</div>
-          <button onClick={()=>sSlConfirmed(true)} style={{background:"#16a34a",border:"none",borderRadius:6,padding:"8px 18px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✓ Confirm</button></>}
-          {slConfirmed&&<button onClick={()=>sSlConfirmed(false)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"7px 14px",color:"#9ca3af",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✎ Edit</button>}
-          <button onClick={()=>sSlShowModal(false)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"7px 14px",color:"#9ca3af",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕ Close</button>
+          {!slConfirmed&&<><div className="sl-toolbar-hint" style={{fontSize:12,color:"#6b7280"}}>Click any cell to edit</div>
+          <button onClick={()=>sSlConfirmed(true)} style={{background:"#16a34a",border:"none",borderRadius:6,padding:"8px 14px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✓ Confirm</button></>}
+          {slConfirmed&&<button onClick={()=>sSlConfirmed(false)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"7px 12px",color:"#9ca3af",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✎ Edit</button>}
+          <button onClick={()=>sSlShowModal(false)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"7px 12px",color:"#9ca3af",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button>
         </div>
         {/* Modal body */}
-        <div style={{flex:1,overflowY:"auto",padding:"24px 32px",background:"#f3f4f6"}}>
-          {slResult.length===0&&<div style={{background:"#450a0a",borderRadius:10,padding:"14px 18px",marginBottom:14,fontSize:13,color:"#f87171"}}>No opportunities matched those criteria. Try widening your filters.</div>}
-          {visible.length>0&&<div style={{background:"#fff",border:"1px solid #000",borderRadius:6,overflow:"hidden"}}>
-            <div style={{padding:"18px",borderBottom:"1px solid #000",background:"#fff",textAlign:"center"}}>
-              <div style={{fontSize:17,fontWeight:700,color:"#000",letterSpacing:"0.03em"}}>APPLICATION SHORTLIST FOR {(slForm.name||"-").toUpperCase()} ({fmtOrdinalDate(new Date())})</div>
+        <div className="sl-modal-body" style={{flex:1,overflowY:"auto",padding:"24px 32px",background:"#f3f4f6"}}>
+          {slResult.length===0&&<div style={{background:"#450a0a",borderRadius:10,padding:"14px 18px",marginBottom:14,fontSize:13,color:"#f87171"}}>No opportunities matched. Try widening your filters.</div>}
+          {visible.length>0&&<div>
+            {/* Shared header */}
+            <div style={{background:"#fff",border:"1px solid #000",borderRadius:"6px 6px 0 0",padding:"14px 18px",textAlign:"center",borderBottom:"1px solid #000"}}>
+              <div style={{fontSize:16,fontWeight:700,color:"#000",letterSpacing:"0.03em"}}>APPLICATION SHORTLIST FOR {(slForm.name||"-").toUpperCase()} ({fmtOrdinalDate(new Date())})</div>
             </div>
-            <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
-              <colgroup>
-                <col style={{width:"14%"}}/><col style={{width:"18%"}}/><col style={{width:"11%"}}/><col style={{width:"9%"}}/><col style={{width:"11%"}}/><col style={{width:"33%"}}/>{!slConfirmed&&<col style={{width:"4%"}}/>}
-              </colgroup>
-              <thead><tr>
-                <th style={slTH}>School</th><th style={slTH}>Relevant Programmes</th><th style={slTH}>Tuition</th><th style={slTH}>App Fee</th><th style={slTH}>Deadline</th><th style={slTH}>Notes</th>{!slConfirmed&&<th style={{...slTH,padding:4}}></th>}
-              </tr></thead>
-              <tbody>
-                {slResult.map((o,i)=>{
-                  if(slRemoved.has(i)) return null;
-                  const all=o.programme.split(",").map(p=>p.trim()).filter(Boolean);
-                  const matched=slForm.programme?all.filter(p=>matchesProgramme(p,slForm.programme)):all.slice(0,3);
-                  const noteParts=[o.english&&o.english.trim().toLowerCase()!=="none"?`🌐 ${o.english}`:null,o.appNotes&&o.appNotes.trim().toLowerCase()!=="none"?`📝 ${o.appNotes}`:null].filter(Boolean);
-                  const calls=parsePeriodCalls(o.period);
-                  const deadlineText=calls.length===0?(o.period||"-"):calls.length===1?fmtShortDate(calls[0].close):calls.map((c,ci)=>`Call ${ci+1}: ${fmtShortDate(c.close)}`).join(" | ");
-                  return(
-                    <tr key={i}>
-                      <td style={{...slTD,fontWeight:600}}>
-                        <EditCell rowIdx={i} field="school" defaultVal={o.school} style={{fontWeight:600}}/>
-                        {o.country&&<div style={{fontSize:11,color:"#555",fontWeight:400,marginTop:2}}>{o.country}</div>}
-                      </td>
-                      <td style={slTD}><EditCell rowIdx={i} field="programmes" defaultVal={matched.length>0?matched.join("; "):"-"}/></td>
-                      <td style={slTD}><EditCell rowIdx={i} field="tuition" defaultVal={o.tuition||"-"}/></td>
-                      <td style={slTD}><EditCell rowIdx={i} field="fee" defaultVal={o.fee||"-"}/></td>
-                      <td style={slTD}><EditCell rowIdx={i} field="deadline" defaultVal={deadlineText}/></td>
-                      <td style={slTD}><EditCell rowIdx={i} field="notes" defaultVal={noteParts.join(" | ")||"-"}/></td>
-                      {!slConfirmed&&<td style={{...slTD,textAlign:"center",padding:4}}>
-                        <button onClick={()=>sSlRemoved(s=>{const n=new Set(s);n.add(i);return n;})} style={{background:"none",border:"1px solid #ccc",borderRadius:4,padding:"2px 5px",color:"#999",fontSize:10,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button>
-                      </td>}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            {/* DESKTOP: table */}
+            <div className="sl-table-view" style={{background:"#fff",border:"1px solid #000",borderTop:"none",borderRadius:"0 0 6px 6px",overflow:"hidden",display:"block"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
+                <colgroup>
+                  <col style={{width:"14%"}}/><col style={{width:"18%"}}/><col style={{width:"11%"}}/><col style={{width:"9%"}}/><col style={{width:"11%"}}/><col style={{width:"33%"}}/>{!slConfirmed&&<col style={{width:"4%"}}/>}
+                </colgroup>
+                <thead><tr>
+                  <th style={slTH}>School</th><th style={slTH}>Relevant Programmes</th><th style={slTH}>Tuition</th><th style={slTH}>App Fee</th><th style={slTH}>Deadline</th><th style={slTH}>Notes</th>{!slConfirmed&&<th style={{...slTH,padding:4}}></th>}
+                </tr></thead>
+                <tbody>
+                  {slResult.map((o,i)=>{
+                    if(slRemoved.has(i)) return null;
+                    const all=o.programme.split(",").map(p=>p.trim()).filter(Boolean);
+                    const matched=slForm.programme?all.filter(p=>matchesProgramme(p,slForm.programme)):all.slice(0,3);
+                    const noteParts=[o.english&&o.english.trim().toLowerCase()!=="none"?`🌐 ${o.english}`:null,o.appNotes&&o.appNotes.trim().toLowerCase()!=="none"?`📝 ${o.appNotes}`:null].filter(Boolean);
+                    const calls=parsePeriodCalls(o.period);
+                    const deadlineText=calls.length===0?(o.period||"-"):calls.length===1?fmtShortDate(calls[0].close):calls.map((c,ci)=>`Call ${ci+1}: ${fmtShortDate(c.close)}`).join(" | ");
+                    return(
+                      <tr key={i}>
+                        <td style={{...slTD,fontWeight:600}}><EditCell rowIdx={i} field="school" defaultVal={o.school} style={{fontWeight:600}}/>{o.country&&<div style={{fontSize:11,color:"#555",fontWeight:400,marginTop:2}}>{o.country}</div>}</td>
+                        <td style={slTD}><EditCell rowIdx={i} field="programmes" defaultVal={matched.length>0?matched.join("; "):"-"}/></td>
+                        <td style={slTD}><EditCell rowIdx={i} field="tuition" defaultVal={o.tuition||"-"}/></td>
+                        <td style={slTD}><EditCell rowIdx={i} field="fee" defaultVal={o.fee||"-"}/></td>
+                        <td style={slTD}><EditCell rowIdx={i} field="deadline" defaultVal={deadlineText}/></td>
+                        <td style={slTD}><EditCell rowIdx={i} field="notes" defaultVal={noteParts.join(" | ")||"-"}/></td>
+                        {!slConfirmed&&<td style={{...slTD,textAlign:"center",padding:4}}><button onClick={()=>sSlRemoved(s=>{const n=new Set(s);n.add(i);return n;})} style={{background:"none",border:"1px solid #ccc",borderRadius:4,padding:"2px 5px",color:"#999",fontSize:10,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button></td>}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {/* MOBILE: cards */}
+            <div className="sl-card-view" style={{display:"none",flexDirection:"column",gap:10,marginTop:2}}>
+              {slResult.map((o,i)=>{
+                if(slRemoved.has(i)) return null;
+                const all=o.programme.split(",").map(p=>p.trim()).filter(Boolean);
+                const matched=slForm.programme?all.filter(p=>matchesProgramme(p,slForm.programme)):all.slice(0,3);
+                const noteParts=[o.english&&o.english.trim().toLowerCase()!=="none"?o.english:null,o.appNotes&&o.appNotes.trim().toLowerCase()!=="none"?o.appNotes:null].filter(Boolean);
+                const calls=parsePeriodCalls(o.period);
+                const deadlineText=calls.length===0?(o.period||"-"):calls.length===1?fmtShortDate(calls[0].close):calls.map((c,ci)=>`Call ${ci+1}: ${fmtShortDate(c.close)}`).join(" | ");
+                return(
+                  <div key={i} style={{background:"#fff",border:"1px solid #ccc",borderRadius:8,padding:"14px 16px",position:"relative"}}>
+                    {!slConfirmed&&<button onClick={()=>sSlRemoved(s=>{const n=new Set(s);n.add(i);return n;})} style={{position:"absolute",top:10,right:10,background:"none",border:"1px solid #ddd",borderRadius:4,padding:"2px 7px",color:"#bbb",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button>}
+                    <div style={{paddingRight:slConfirmed?0:36}}>
+                      <div style={{fontWeight:700,fontSize:14,color:"#000",marginBottom:2}}>{cellVal(i,"school",o.school)}</div>
+                      {o.country&&<div style={{fontSize:11,color:"#666",marginBottom:8}}>{o.country}</div>}
+                      {matched.length>0&&<div style={{fontSize:12,color:"#333",marginBottom:10,lineHeight:1.5,fontStyle:"italic"}}>{matched.join("; ")}</div>}
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:noteParts.length?10:0}}>
+                        {[["Tuition",cellVal(i,"tuition",o.tuition||"-")],["App Fee",cellVal(i,"fee",o.fee||"-")],["Deadline",cellVal(i,"deadline",deadlineText)]].map(([lbl,val])=>(
+                          <div key={lbl} style={{background:"#f9fafb",border:"1px solid #e5e7eb",borderRadius:6,padding:"7px 8px"}}>
+                            <div style={{fontSize:10,color:"#9ca3af",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:2}}>{lbl}</div>
+                            <div style={{fontSize:12,color:"#111",fontWeight:600}}>{val}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {noteParts.length>0&&<div style={{fontSize:11,color:"#555",lineHeight:1.5,borderTop:"1px solid #f0f0f0",paddingTop:8}}>{noteParts.join(" | ")}</div>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>}
           {visible.length===0&&slResult.length>0&&<div style={{background:"#fff",borderRadius:10,padding:"40px",textAlign:"center",color:"#6b7280",fontSize:13}}>All rows removed. Close and click Clear & Reset to start over.</div>}
         </div>
