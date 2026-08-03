@@ -307,8 +307,9 @@ export default function App(){
 
   useEffect(()=>{
     if(!user) return;
-    sL(true);
-    fetch(SHEET_URL).then(r=>r.json()).then(raw=>{
+    const CACHE_KEY="jap_sheet_cache";
+    const CACHE_TTL=5*60*1000;
+    const parseRaw=(raw)=>{
       const appRows = raw.applicants.slice(2).filter(r=>r[0]&&String(r[0]).trim());
       const applicants = appRows.map((r,i)=>{
         const payable=Number(r[7])||0, paid=Number(r[8])||0;
@@ -323,7 +324,20 @@ export default function App(){
       const opportunities = oppRows.map(r=>({
         school:String(r[0]||"").trim(), country:String(r[1]||"").trim(), programme:String(r[2]||"").trim(), level:String(r[3]||"").trim(), type:String(r[4]||"").trim(), tuition:String(r[5]||"").trim(), fee:String(r[6]||"").trim(), period:String(r[7]||"").trim(), english:String(r[8]||"").trim(), appNotes:String(r[9]||"").trim(), spring:String(r[10]||"").trim(), link:String(r[11]||"").trim(), tuitionMin:Number(r[12])||0, tuitionMax:Number(r[13])||0, feeMin:Number(r[14])||0, feeMax:Number(r[15])||0,
       }));
-      sD({applicants,applications:linked,opportunities}); sL(false);
+      return {applicants,applications:linked,opportunities};
+    };
+    // Serve cached data instantly if fresh enough
+    let servedFromCache=false;
+    try {
+      const cached=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");
+      if(cached&&(Date.now()-cached.ts)<CACHE_TTL){sD(cached.data);sL(false);return;}
+      if(cached){sD(cached.data);sL(false);servedFromCache=true;}// stale: show now, refresh silently
+    } catch(e){}
+    if(!servedFromCache) sL(true);
+    fetch(SHEET_URL).then(r=>r.json()).then(raw=>{
+      const parsed=parseRaw(raw);
+      try{localStorage.setItem(CACHE_KEY,JSON.stringify({ts:Date.now(),data:parsed}));}catch(e){}
+      sD(parsed); sL(false);
     }).catch(err=>{console.error(err);sL(false);});
   },[user]);
 
