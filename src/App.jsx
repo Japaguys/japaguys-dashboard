@@ -489,7 +489,7 @@ export default function App(){
           </div>
           <div style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:8,padding:4,display:"flex",gap:4}}>
             {["2027","2026"].map(y=>(
-              <button key={y} onClick={()=>{setSeason(y);sSel(null);sV("summary");}} style={{padding:"9px 22px",borderRadius:6,border:"none",fontFamily:"Arial,sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",transition:"all 0.15s",background:season===y?BLUE:"transparent",color:season===y?"#fff":"#6b7280",letterSpacing:"0.02em"}}>
+              <button key={y} onClick={()=>{setSeason(y);sSel(null);}} style={{padding:"9px 22px",borderRadius:6,border:"none",fontFamily:"Arial,sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",transition:"all 0.15s",background:season===y?BLUE:"transparent",color:season===y?"#fff":"#6b7280",letterSpacing:"0.02em"}}>
                 {y} Intake
               </button>
             ))}
