@@ -429,7 +429,7 @@ export default function App(){
   const TD = {padding:"12px 16px",fontSize:13,color:"#d1d5db",borderBottom:`1px solid ${BORDER}`,verticalAlign:"middle"};
 
   return <>
-    <style>{`@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box;margin:0;padding:0}html,body{max-width:100%;overflow-x:hidden}body{background:${BG};font-family:Arial,sans-serif}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:${BG}}::-webkit-scrollbar-thumb{background:${BORDER};border-radius:3px}input::placeholder{color:#374151}select option{background:#0f1923}.hamburger{display:none!important}@media(max-width:768px){.hamburger{display:flex!important}.sidebar{transform:translateX(-100%);transition:transform 0.25s}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0!important;padding:64px 12px 20px!important;width:100%!important;max-width:100vw!important;overflow-x:hidden!important;box-sizing:border-box!important}.metric-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}.chart-grid{grid-template-columns:1fr!important}.client-grid{grid-template-columns:1fr!important}.filter-row{flex-direction:column!important}.filter-row select,.filter-row input{width:100%!important}table{font-size:11px;width:100%!important}.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}table td,table th{padding:8px 6px!important;white-space:nowrap}.topbar-right{display:none!important}.greeting-bar{margin-bottom:16px!important}.countries-cards{display:flex!important}.countries-table{display:none!important}}`}</style>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box;margin:0;padding:0}html,body{max-width:100%;overflow-x:hidden}body{background:${BG};font-family:Arial,sans-serif}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:${BG}}::-webkit-scrollbar-thumb{background:${BORDER};border-radius:3px}input::placeholder{color:#374151}select option{background:#0f1923}.hamburger{display:none!important}@media(max-width:768px){.hamburger{display:flex!important}.sidebar{transform:translateX(-100%);transition:transform 0.25s}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0!important;padding:64px 12px 20px!important;width:100%!important;max-width:100vw!important;overflow-x:hidden!important;box-sizing:border-box!important}.metric-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}.chart-grid{grid-template-columns:1fr!important}.client-grid{grid-template-columns:1fr!important}.filter-row{flex-direction:column!important}.filter-row select,.filter-row input{width:100%!important}table{font-size:11px;width:100%!important}.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}table td,table th{padding:8px 6px!important;white-space:nowrap}.topbar-right{display:none!important}.greeting-bar{margin-bottom:16px!important}.countries-cards{display:flex!important}.countries-table{display:none!important}.sl-top-row{grid-template-columns:1fr!important}.sl-bottom-row{grid-template-columns:1fr!important}.sl-countries-grid{grid-template-columns:1fr 1fr!important}}`}</style>
     <div style={{display:"flex",minHeight:"100vh",fontFamily:"Arial,sans-serif",background:BG,color:"#f9fafb"}}>
       {/* MOBILE OVERLAY */}
       {menuOpen&&<div onClick={()=>sMenu(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:150,cursor:"pointer"}}/>}
@@ -794,7 +794,7 @@ export default function App(){
           {oppTab==="shortlist"&&<div>
             {/* Top row: client name + quick filters */}
             <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"20px 22px",marginBottom:14}}>
-              <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr",gap:14,alignItems:"end"}}>
+              <div className="sl-top-row" style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr",gap:14,alignItems:"end"}}>
                 <div>
                   <label style={lbl}>Client Name</label>
                   <input value={slForm.name} onChange={e=>sSlForm(f=>({...f,name:e.target.value}))} placeholder="e.g. John Doe" style={finp}/>
@@ -819,14 +819,14 @@ export default function App(){
             </div>
 
             {/* Bottom row: countries + programme + actions */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+            <div className="sl-bottom-row" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
               {/* Countries */}
               <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"18px 20px"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                   <label style={{...lbl,marginBottom:0}}>Countries of Interest</label>
                   {slForm.countries.length>0&&<button onClick={()=>sSlForm(f=>({...f,countries:[]}))} style={{background:"none",border:"none",color:"#6b7280",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif",padding:0}}>{slForm.countries.length} selected · clear</button>}
                 </div>
-                <div style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"10px 12px",display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"4px 12px",maxHeight:200,overflowY:"auto"}}>
+                <div className="sl-countries-grid" style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"10px 12px",display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"4px 12px",maxHeight:200,overflowY:"auto"}}>
                   {oppCountries.map(c=>(
                     <label key={c} style={{display:"flex",alignItems:"center",gap:6,padding:"3px 0",cursor:"pointer",fontSize:12,color:"#d1d5db",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                       <input type="checkbox" checked={slForm.countries.includes(c)} onChange={e=>sSlForm(f=>({...f,countries:e.target.checked?[...f.countries,c]:f.countries.filter(x=>x!==c)}))} style={{accentColor:BLUE,flexShrink:0}}/>
