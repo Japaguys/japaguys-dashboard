@@ -992,12 +992,12 @@ export default function App(){
                     const deadlineText=calls.length===0?(o.period||"-"):calls.length===1?fmtShortDate(calls[0].close):calls.map((c,ci)=>`Call ${ci+1}: ${fmtShortDate(c.close)}`).join(" | ");
                     return(
                       <tr key={i}>
-                        <td style={{...slTD,fontWeight:600}}><EditCell rowIdx={i} field="school" defaultVal={o.school} style={{fontWeight:600}}/>{o.country&&<div style={{fontSize:11,color:"#555",fontWeight:400,marginTop:2}}>{o.country}</div>}</td>
-                        <td style={slTD}><EditCell rowIdx={i} field="programmes" defaultVal={matched.length>0?matched.join("; "):"-"}/></td>
-                        <td style={slTD}><EditCell rowIdx={i} field="tuition" defaultVal={o.tuition||"-"}/></td>
-                        <td style={slTD}><EditCell rowIdx={i} field="fee" defaultVal={o.fee||"-"}/></td>
-                        <td style={slTD}><EditCell rowIdx={i} field="deadline" defaultVal={deadlineText}/></td>
-                        <td style={slTD}><EditCell rowIdx={i} field="notes" defaultVal={noteParts.join(" | ")||"-"}/></td>
+                        <td style={{...slTD,fontWeight:600}}>{EditCell({rowIdx:i,field:"school",defaultVal:o.school,style:{fontWeight:600}})}{o.country&&<div style={{fontSize:11,color:"#555",fontWeight:400,marginTop:2}}>{o.country}</div>}</td>
+                        <td style={slTD}>{EditCell({rowIdx:i,field:"programmes",defaultVal:matched.length>0?matched.join("; "):"-"})}</td>
+                        <td style={slTD}>{EditCell({rowIdx:i,field:"tuition",defaultVal:o.tuition||"-"})}</td>
+                        <td style={slTD}>{EditCell({rowIdx:i,field:"fee",defaultVal:o.fee||"-"})}</td>
+                        <td style={slTD}>{EditCell({rowIdx:i,field:"deadline",defaultVal:deadlineText})}</td>
+                        <td style={slTD}>{EditCell({rowIdx:i,field:"notes",defaultVal:noteParts.join(" | ")||"-"})}</td>
                         {!slConfirmed&&<td style={{...slTD,textAlign:"center",padding:4}}><button onClick={()=>sSlRemoved(s=>{const n=new Set(s);n.add(i);return n;})} style={{background:"none",border:"1px solid #ccc",borderRadius:4,padding:"2px 5px",color:"#999",fontSize:10,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button></td>}
                       </tr>
                     );
