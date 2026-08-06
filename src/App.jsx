@@ -20,6 +20,25 @@ const ICON = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJ
 // Kick off a sheet prefetch immediately — before auth resolves — to overlap latency
 const _sheetPrefetch = fetch(SHEET_URL).then(r=>r.json()).catch(()=>null);
 
+// Pure transform — lives at module level so save handlers can call it after a re-fetch
+const parseRaw=(raw)=>{
+  const appRows = raw.applicants.slice(2).filter(r=>r[0]&&String(r[0]).trim());
+  const applicants = appRows.map((r,i)=>{
+    const payable=Number(r[7])||0, paid=Number(r[8])||0;
+    return { id:`JAP${String(i+1).padStart(3,"0")}`, name:String(r[0]||"").trim(), email:String(r[1]||"").trim(), phone:String(r[2]||"").trim(), address:String(r[3]||"").trim(), level:String(r[4]||"").trim(), field:String(r[5]||"").trim(), service:String(r[6]||"").trim(), payable, paid, outstanding:payable-paid, documents:r[10]?String(r[10]).split(",").map(d=>d.trim()).filter(Boolean):[], year:String(r[11]||"").trim(), lastContacted:String(r[12]||"").trim(), lastContactNotes:String(r[13]||"").trim(), season:String(r[14]||"2026").trim() };
+  });
+  const appliRows = raw.applications.slice(2).filter(r=>r[0]&&r[1]);
+  const applications = appliRows.map(r=>({
+    clientName:String(r[0]||"").trim(), university:String(r[1]||"").trim(), country:String(r[2]||"").trim(), programme:String(r[3]||"").trim(), period:String(r[4]||'').trim(), appFee:String(r[5]||"Free").trim(), tuition:String(r[6]||"").trim(), ourProgress:String(r[7]||"").trim(), schoolStatus:String(r[8]||"").trim(), notes:String(r[9]||"").trim(), season:String(r[10]||"").trim(),
+  }));
+  const linked = applications.map(ap=>({...ap, clientId:(applicants.find(a=>a.name.toLowerCase()===ap.clientName.toLowerCase()&&(ap.season?a.season===ap.season:true))||applicants.find(a=>a.name.toLowerCase()===ap.clientName.toLowerCase())||{}).id||null}));
+  const oppRows = raw.opportunities ? raw.opportunities.slice(1).filter(r=>r[0]&&String(r[0]).trim()) : [];
+  const opportunities = oppRows.map(r=>({
+    school:String(r[0]||"").trim(), country:String(r[1]||"").trim(), programme:String(r[2]||"").trim(), level:String(r[3]||"").trim(), type:String(r[4]||"").trim(), tuition:String(r[5]||"").trim(), fee:String(r[6]||"").trim(), period:String(r[7]||"").trim(), english:String(r[8]||"").trim(), appNotes:String(r[9]||"").trim(), spring:String(r[10]||"").trim(), link:String(r[11]||"").trim(), tuitionMin:Number(r[12])||0, tuitionMax:Number(r[13])||0, feeMin:Number(r[14])||0, feeMax:Number(r[15])||0,
+  }));
+  return {applicants,applications:linked,opportunities};
+};
+
 // Brand colors from Japaguys logo
 const BLUE = "#1565F5";
 const BLUE_DARK = "#0f1923";
@@ -269,8 +288,13 @@ export default function App(){
     try {
       const p=new URLSearchParams({action:"addClient",...addClientFields,documents:docsStr,season});
       await fetch(SHEET_URL+"?"+p.toString(),{mode:"no-cors"});
-      const cached=JSON.parse(localStorage.getItem("jap_sheet_cache")||"null");
-      if(cached){cached.data.applicants=[...cached.data.applicants,newClient];cached.ts=Date.now();try{localStorage.setItem("jap_sheet_cache",JSON.stringify(cached));}catch(e){}}
+      // Apps Script wrote the row before responding — re-fetch fresh data now
+      const raw=await fetch(SHEET_URL).then(r=>r.json()).catch(()=>null);
+      if(raw&&raw.applicants){
+        const parsed=parseRaw(raw);
+        try{localStorage.setItem("jap_sheet_cache",JSON.stringify({ts:Date.now(),data:parsed}));}catch(e){}
+        sD(parsed);
+      }
     } catch(e){console.error("Sheet sync failed:",e);}
   };
 
@@ -285,8 +309,13 @@ export default function App(){
     try {
       const p=new URLSearchParams({action:"addApplication",clientName:sel.name,season,...addAppFields});
       await fetch(SHEET_URL+"?"+p.toString(),{mode:"no-cors"});
-      const cached=JSON.parse(localStorage.getItem("jap_sheet_cache")||"null");
-      if(cached){cached.data.applications=[...cached.data.applications,newApp];cached.ts=Date.now();try{localStorage.setItem("jap_sheet_cache",JSON.stringify(cached));}catch(e){}}
+      // Apps Script wrote the row before responding — re-fetch fresh data now
+      const raw=await fetch(SHEET_URL).then(r=>r.json()).catch(()=>null);
+      if(raw&&raw.applicants){
+        const parsed=parseRaw(raw);
+        try{localStorage.setItem("jap_sheet_cache",JSON.stringify({ts:Date.now(),data:parsed}));}catch(e){}
+        sD(parsed);
+      }
     } catch(e){console.error("Sheet sync failed:",e);}
   };
 
@@ -356,23 +385,6 @@ export default function App(){
     if(!user) return;
     const CACHE_KEY="jap_sheet_cache";
     const CACHE_TTL=30*60*1000;
-    const parseRaw=(raw)=>{
-      const appRows = raw.applicants.slice(2).filter(r=>r[0]&&String(r[0]).trim());
-      const applicants = appRows.map((r,i)=>{
-        const payable=Number(r[7])||0, paid=Number(r[8])||0;
-        return { id:`JAP${String(i+1).padStart(3,"0")}`, name:String(r[0]||"").trim(), email:String(r[1]||"").trim(), phone:String(r[2]||"").trim(), address:String(r[3]||"").trim(), level:String(r[4]||"").trim(), field:String(r[5]||"").trim(), service:String(r[6]||"").trim(), payable, paid, outstanding:payable-paid, documents:r[10]?String(r[10]).split(",").map(d=>d.trim()).filter(Boolean):[], year:String(r[11]||"").trim(), lastContacted:String(r[12]||"").trim(), lastContactNotes:String(r[13]||"").trim(), season:String(r[14]||"2026").trim() };
-      });
-      const appliRows = raw.applications.slice(2).filter(r=>r[0]&&r[1]);
-      const applications = appliRows.map(r=>({
-        clientName:String(r[0]||"").trim(), university:String(r[1]||"").trim(), country:String(r[2]||"").trim(), programme:String(r[3]||"").trim(), period:String(r[4]||'').trim(), appFee:String(r[5]||"Free").trim(), tuition:String(r[6]||"").trim(), ourProgress:String(r[7]||"").trim(), schoolStatus:String(r[8]||"").trim(), notes:String(r[9]||"").trim(), season:String(r[10]||"").trim(),
-      }));
-      const linked = applications.map(ap=>({...ap, clientId:(applicants.find(a=>a.name.toLowerCase()===ap.clientName.toLowerCase()&&(ap.season?a.season===ap.season:true))||applicants.find(a=>a.name.toLowerCase()===ap.clientName.toLowerCase())||{}).id||null}));
-      const oppRows = raw.opportunities ? raw.opportunities.slice(1).filter(r=>r[0]&&String(r[0]).trim()) : [];
-      const opportunities = oppRows.map(r=>({
-        school:String(r[0]||"").trim(), country:String(r[1]||"").trim(), programme:String(r[2]||"").trim(), level:String(r[3]||"").trim(), type:String(r[4]||"").trim(), tuition:String(r[5]||"").trim(), fee:String(r[6]||"").trim(), period:String(r[7]||"").trim(), english:String(r[8]||"").trim(), appNotes:String(r[9]||"").trim(), spring:String(r[10]||"").trim(), link:String(r[11]||"").trim(), tuitionMin:Number(r[12])||0, tuitionMax:Number(r[13])||0, feeMin:Number(r[14])||0, feeMax:Number(r[15])||0,
-      }));
-      return {applicants,applications:linked,opportunities};
-    };
     // Serve cached data instantly if fresh enough
     let servedFromCache=false;
     try {
