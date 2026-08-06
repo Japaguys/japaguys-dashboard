@@ -285,17 +285,23 @@ export default function App(){
     sAddClientFields({name:"",email:"",phone:"",address:"",level:"Masters",field:"",service:"Done-For-You",payable:"",year:""});
     sAddClientDocs([]);
     sSavingAddClient(false);
+    // Patch cache immediately so the entry survives refresh
     try {
-      const p=new URLSearchParams({action:"addClient",...addClientFields,documents:docsStr,season});
-      await fetch(SHEET_URL+"?"+p.toString(),{mode:"no-cors"});
-      // Apps Script wrote the row before responding — re-fetch fresh data now
-      const raw=await fetch(SHEET_URL).then(r=>r.json()).catch(()=>null);
-      if(raw&&raw.applicants){
+      const cached=JSON.parse(localStorage.getItem("jap_sheet_cache")||"null");
+      if(cached){cached.data.applicants=[...cached.data.applicants,newClient];cached.ts=Date.now();localStorage.setItem("jap_sheet_cache",JSON.stringify(cached));}
+    } catch(e){}
+    // Fire write in background (no await)
+    fetch(SHEET_URL+"?"+new URLSearchParams({action:"addClient",...addClientFields,documents:docsStr,season}).toString(),{mode:"no-cors"}).catch(()=>{});
+    // After 5s delay, re-fetch with cache-buster; only overwrite cache if new client is confirmed in sheet
+    setTimeout(async()=>{
+      try {
+        const raw=await fetch(SHEET_URL+"?_t="+Date.now()).then(r=>r.json()).catch(()=>null);
+        if(!raw||!raw.applicants) return;
         const parsed=parseRaw(raw);
-        try{localStorage.setItem("jap_sheet_cache",JSON.stringify({ts:Date.now(),data:parsed}));}catch(e){}
-        sD(parsed);
-      }
-    } catch(e){console.error("Sheet sync failed:",e);}
+        const has=parsed.applicants.some(a=>a.name.toLowerCase()===newClient.name.toLowerCase()&&a.season===newClient.season);
+        if(has){try{localStorage.setItem("jap_sheet_cache",JSON.stringify({ts:Date.now(),data:parsed}));}catch(e){} sD(parsed);}
+      } catch(e){}
+    },5000);
   };
 
   const saveNewApp = async () => {
@@ -306,17 +312,23 @@ export default function App(){
     sAddAppModal(false);
     sAddAppFields({university:"",country:"",programme:"",period:"",appFee:"",tuition:"",ourProgress:"Not Started",schoolStatus:"No Status Yet",notes:""});
     sSavingAddApp(false);
+    // Patch cache immediately so the entry survives refresh
     try {
-      const p=new URLSearchParams({action:"addApplication",clientName:sel.name,season,...addAppFields});
-      await fetch(SHEET_URL+"?"+p.toString(),{mode:"no-cors"});
-      // Apps Script wrote the row before responding — re-fetch fresh data now
-      const raw=await fetch(SHEET_URL).then(r=>r.json()).catch(()=>null);
-      if(raw&&raw.applicants){
+      const cached=JSON.parse(localStorage.getItem("jap_sheet_cache")||"null");
+      if(cached){cached.data.applications=[...cached.data.applications,newApp];cached.ts=Date.now();localStorage.setItem("jap_sheet_cache",JSON.stringify(cached));}
+    } catch(e){}
+    // Fire write in background (no await)
+    fetch(SHEET_URL+"?"+new URLSearchParams({action:"addApplication",clientName:sel.name,season,...addAppFields}).toString(),{mode:"no-cors"}).catch(()=>{});
+    // After 5s delay, re-fetch with cache-buster; only overwrite cache if new app is confirmed in sheet
+    setTimeout(async()=>{
+      try {
+        const raw=await fetch(SHEET_URL+"?_t="+Date.now()).then(r=>r.json()).catch(()=>null);
+        if(!raw||!raw.applicants) return;
         const parsed=parseRaw(raw);
-        try{localStorage.setItem("jap_sheet_cache",JSON.stringify({ts:Date.now(),data:parsed}));}catch(e){}
-        sD(parsed);
-      }
-    } catch(e){console.error("Sheet sync failed:",e);}
+        const has=parsed.applications.some(a=>a.clientName.toLowerCase()===newApp.clientName.toLowerCase()&&a.university.toLowerCase()===newApp.university.toLowerCase()&&a.season===newApp.season);
+        if(has){try{localStorage.setItem("jap_sheet_cache",JSON.stringify({ts:Date.now(),data:parsed}));}catch(e){} sD(parsed);}
+      } catch(e){}
+    },5000);
   };
 
   const updateApplication = async () => {
