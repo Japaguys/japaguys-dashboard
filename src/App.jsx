@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import html2canvas from "html2canvas";
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "firebase/auth";
 
@@ -265,6 +266,8 @@ export default function App(){
   const [slConfirmed,sSlConfirmed]=useState(false);
   const [slEdits,sSlEdits]=useState({});
   const [slShowModal,sSlShowModal]=useState(false);
+  const [slDownloading,sSlDownloading]=useState(false);
+  const slPrintRef=useRef(null);
   const [openCountry,sOpenCountry]=useState("");
   const [openLevel,sOpenLevel]=useState("");
   const [openType,sOpenType]=useState("");
@@ -488,6 +491,19 @@ export default function App(){
     sSlConfirmed(false);
     sSlEdits({});
     sSlShowModal(true);
+  };
+
+  const downloadShortlistPng=async()=>{
+    if(!slPrintRef.current||slDownloading) return;
+    sSlDownloading(true);
+    try {
+      const canvas=await html2canvas(slPrintRef.current,{scale:3,backgroundColor:"#ffffff",useCORS:true,logging:false,removeContainer:true});
+      const link=document.createElement("a");
+      link.download=`shortlist-${(slForm.name||"client").replace(/\s+/g,"-").toLowerCase()}-${new Date().toISOString().slice(0,10)}.png`;
+      link.href=canvas.toDataURL("image/png");
+      link.click();
+    } catch(e){console.error("PNG export failed:",e);}
+    sSlDownloading(false);
   };
 
   const filteredOpps=opportunities.filter(o=>{
@@ -949,29 +965,29 @@ export default function App(){
     {slShowModal&&slResult&&(()=>{
       const visible=slResult.filter((_,i)=>!slRemoved.has(i));
       const slBorder="1px solid #000";
-      const slTH={padding:"8px 10px",fontSize:12,fontWeight:700,color:"#000",background:"#fff",textAlign:"left",border:slBorder};
-      const slTD={padding:"8px 10px",fontSize:12,color:"#000",border:slBorder,verticalAlign:"top",lineHeight:1.5};
+      const slTH={padding:"10px 12px",fontSize:14,fontWeight:700,color:"#000",background:"#fff",textAlign:"left",border:slBorder};
+      const slTD={padding:"10px 12px",fontSize:14,color:"#000",border:slBorder,verticalAlign:"top",lineHeight:1.6};
       const cellVal=(i,field,def)=>slEdits[`${i}_${field}`]!==undefined?slEdits[`${i}_${field}`]:def;
       const setCell=(i,field,val)=>sSlEdits(e=>({...e,[`${i}_${field}`]:val}));
       const EditCell=({rowIdx,field,defaultVal,style={}})=>slConfirmed
         ?<span>{cellVal(rowIdx,field,defaultVal)||"-"}</span>
-        :<input value={cellVal(rowIdx,field,defaultVal)||""} onChange={e=>setCell(rowIdx,field,e.target.value)} style={{border:"none",borderBottom:"1px dashed #aaa",width:"100%",fontFamily:"Arial,sans-serif",fontSize:12,color:"#000",outline:"none",background:"transparent",...style}}/>;
+        :<input value={cellVal(rowIdx,field,defaultVal)||""} onChange={e=>setCell(rowIdx,field,e.target.value)} style={{border:"none",borderBottom:"1px dashed #aaa",width:"100%",fontFamily:"Arial,sans-serif",fontSize:14,color:"#000",outline:"none",background:"transparent",...style}}/>;
       return <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",flexDirection:"column",fontFamily:"Arial,sans-serif"}}>
         {/* Modal toolbar */}
         <div className="sl-modal-toolbar" style={{background:"#0f1923",borderBottom:`1px solid ${BORDER}`,padding:"12px 24px",display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
           <div style={{flex:1,fontSize:13,color:"#f9fafb",fontWeight:600}}>Shortlist - {(slForm.name||"-")} · {visible.length} {visible.length===1?"row":"rows"}</div>
           {!slConfirmed&&<><div className="sl-toolbar-hint" style={{fontSize:12,color:"#6b7280"}}>Click any cell to edit</div>
           <button onClick={()=>sSlConfirmed(true)} style={{background:"#16a34a",border:"none",borderRadius:6,padding:"8px 14px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✓ Confirm</button></>}
-          {slConfirmed&&<button onClick={()=>sSlConfirmed(false)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"7px 12px",color:"#9ca3af",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✎ Edit</button>}
+          {slConfirmed&&<><button onClick={()=>sSlConfirmed(false)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"7px 12px",color:"#9ca3af",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✎ Edit</button><button onClick={downloadShortlistPng} disabled={slDownloading} style={{background:"#1d4ed8",border:"none",borderRadius:6,padding:"8px 14px",color:"#fff",fontWeight:700,fontSize:13,cursor:slDownloading?"wait":"pointer",opacity:slDownloading?0.7:1,fontFamily:"Arial,sans-serif"}}>{slDownloading?"Exporting…":"⬇ Download PNG"}</button></>}
           <button onClick={()=>sSlShowModal(false)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"7px 12px",color:"#9ca3af",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button>
         </div>
         {/* Modal body */}
         <div className="sl-modal-body" style={{flex:1,overflowY:"auto",padding:"24px 32px",background:"#f3f4f6"}}>
           {slResult.length===0&&<div style={{background:"#450a0a",borderRadius:10,padding:"14px 18px",marginBottom:14,fontSize:13,color:"#f87171"}}>No opportunities matched. Try widening your filters.</div>}
-          {visible.length>0&&<div>
+          {visible.length>0&&<div ref={slPrintRef}>
             {/* Shared header */}
-            <div style={{background:"#fff",border:"1px solid #000",borderRadius:"6px 6px 0 0",padding:"14px 18px",textAlign:"center",borderBottom:"1px solid #000"}}>
-              <div style={{fontSize:16,fontWeight:700,color:"#000",letterSpacing:"0.03em"}}>APPLICATION SHORTLIST FOR {(slForm.name||"-").toUpperCase()} ({fmtOrdinalDate(new Date())})</div>
+            <div style={{background:"#fff",border:"1px solid #000",borderRadius:"6px 6px 0 0",padding:"16px 20px",textAlign:"center",borderBottom:"1px solid #000"}}>
+              <div style={{fontSize:19,fontWeight:700,color:"#000",letterSpacing:"0.03em"}}>APPLICATION SHORTLIST FOR {(slForm.name||"-").toUpperCase()} ({fmtOrdinalDate(new Date())})</div>
             </div>
             {/* DESKTOP: table */}
             <div className="sl-table-view" style={{background:"#fff",border:"1px solid #000",borderTop:"none",borderRadius:"0 0 6px 6px",overflow:"hidden",display:"block"}}>
@@ -992,7 +1008,7 @@ export default function App(){
                     const deadlineText=calls.length===0?(o.period||"-"):calls.length===1?fmtShortDate(calls[0].close):calls.map((c,ci)=>`Call ${ci+1}: ${fmtShortDate(c.close)}`).join(" | ");
                     return(
                       <tr key={i}>
-                        <td style={{...slTD,fontWeight:600}}>{EditCell({rowIdx:i,field:"school",defaultVal:o.school,style:{fontWeight:600}})}{o.country&&<div style={{fontSize:11,color:"#555",fontWeight:400,marginTop:2}}>{o.country}</div>}</td>
+                        <td style={{...slTD,fontWeight:600}}>{EditCell({rowIdx:i,field:"school",defaultVal:o.school,style:{fontWeight:600}})}{o.country&&<div style={{fontSize:12,color:"#555",fontWeight:400,marginTop:3}}>{o.country}</div>}</td>
                         <td style={slTD}>{EditCell({rowIdx:i,field:"programmes",defaultVal:matched.length>0?matched.join("; "):"-"})}</td>
                         <td style={slTD}>{EditCell({rowIdx:i,field:"tuition",defaultVal:o.tuition||"-"})}</td>
                         <td style={slTD}>{EditCell({rowIdx:i,field:"fee",defaultVal:o.fee||"-"})}</td>
