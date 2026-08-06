@@ -268,6 +268,7 @@ export default function App(){
     sSavingAddClient(false);
     try {
       await fetch(SHEET_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"addClient",...addClientFields,documents:docsStr,season})});
+      localStorage.removeItem("jap_sheet_cache");
     } catch(e){console.error("Sheet sync failed:",e);alert("Client added to dashboard but failed to save to sheet. Please add manually.");}
   };
 
@@ -281,7 +282,8 @@ export default function App(){
     sSavingAddApp(false);
     try {
       await fetch(SHEET_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"addApplication",clientName:sel.name,season,...addAppFields})});
-    } catch(e){console.error("Sheet sync failed:",e);alert("Network error: "+e.message);}
+      localStorage.removeItem("jap_sheet_cache");
+    } catch(e){console.error("Sheet sync failed:",e);}
   };
 
   const updateApplication = async () => {
