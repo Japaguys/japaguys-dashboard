@@ -224,6 +224,9 @@ export default function App(){
   const [editApp,sEditApp]=useState(null);
   const [editAppFields,sEditAppFields]=useState({ourProgress:"",schoolStatus:"",notes:""});
   const [savingApp,sSavingApp]=useState(false);
+  const [addAppModal,sAddAppModal]=useState(false);
+  const [addAppFields,sAddAppFields]=useState({university:"",country:"",programme:"",period:"",appFee:"",tuition:"",ourProgress:"Not Started",schoolStatus:"No Status Yet",notes:""});
+  const [savingAddApp,sSavingAddApp]=useState(false);
   const [editPaid,sEditPaid]=useState(false);
   const [editPaidVal,sEditPaidVal]=useState("");
   const [savingPaid,sSavingPaid]=useState(false);
@@ -245,6 +248,19 @@ export default function App(){
 
   useEffect(()=>{ const u=onAuthStateChanged(auth,u=>{ sU(u); sR(true); if(u&&!u.displayName) sNamePrompt(true); }); return u; },[]);
   useEffect(()=>{ if(user&&!user.displayName&&!auth.currentUser?.displayName) sNamePrompt(true); },[user]);
+
+  const saveNewApp = async () => {
+    if(!addAppFields.university.trim()||!sel) return;
+    sSavingAddApp(true);
+    try {
+      await fetch(SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"addApplication",clientName:sel.name,season,...addAppFields})});
+      const newApp={...addAppFields,clientName:sel.name,clientId:sel.id,season};
+      sD(d=>({...d,applications:[...d.applications,newApp]}));
+      sAddAppModal(false);
+      sAddAppFields({university:"",country:"",programme:"",period:"",appFee:"",tuition:"",ourProgress:"Not Started",schoolStatus:"No Status Yet",notes:""});
+    } catch(e){console.error(e);}
+    sSavingAddApp(false);
+  };
 
   const updateApplication = async () => {
     if(!editApp) return;
@@ -320,9 +336,9 @@ export default function App(){
       });
       const appliRows = raw.applications.slice(2).filter(r=>r[0]&&r[1]);
       const applications = appliRows.map(r=>({
-        clientName:String(r[0]||"").trim(), university:String(r[1]||"").trim(), country:String(r[2]||"").trim(), programme:String(r[3]||"").trim(), period:String(r[4]||'').trim(), appFee:String(r[5]||"Free").trim(), tuition:String(r[6]||"").trim(), ourProgress:String(r[7]||"").trim(), schoolStatus:String(r[8]||"").trim(), notes:String(r[9]||"").trim(),
+        clientName:String(r[0]||"").trim(), university:String(r[1]||"").trim(), country:String(r[2]||"").trim(), programme:String(r[3]||"").trim(), period:String(r[4]||'').trim(), appFee:String(r[5]||"Free").trim(), tuition:String(r[6]||"").trim(), ourProgress:String(r[7]||"").trim(), schoolStatus:String(r[8]||"").trim(), notes:String(r[9]||"").trim(), season:String(r[10]||"").trim(),
       }));
-      const linked = applications.map(ap=>({...ap, clientId:(applicants.find(a=>a.name.toLowerCase()===ap.clientName.toLowerCase())||{}).id||null}));
+      const linked = applications.map(ap=>({...ap, clientId:(applicants.find(a=>a.name.toLowerCase()===ap.clientName.toLowerCase()&&(ap.season?a.season===ap.season:true))||applicants.find(a=>a.name.toLowerCase()===ap.clientName.toLowerCase())||{}).id||null}));
       const oppRows = raw.opportunities ? raw.opportunities.slice(1).filter(r=>r[0]&&String(r[0]).trim()) : [];
       const opportunities = oppRows.map(r=>({
         school:String(r[0]||"").trim(), country:String(r[1]||"").trim(), programme:String(r[2]||"").trim(), level:String(r[3]||"").trim(), type:String(r[4]||"").trim(), tuition:String(r[5]||"").trim(), fee:String(r[6]||"").trim(), period:String(r[7]||"").trim(), english:String(r[8]||"").trim(), appNotes:String(r[9]||"").trim(), spring:String(r[10]||"").trim(), link:String(r[11]||"").trim(), tuitionMin:Number(r[12])||0, tuitionMax:Number(r[13])||0, feeMin:Number(r[14])||0, feeMax:Number(r[15])||0,
@@ -366,6 +382,7 @@ export default function App(){
   const {applicants:allApplicants,applications:allApplications,opportunities=[]}=data;
   const applicants=allApplicants.filter(a=>a.season===season);
   const applications=allApplications.filter(a=>{
+    if(a.season) return a.season===season;
     const client=allApplicants.find(ap=>ap.name.toLowerCase()===a.clientName.toLowerCase());
     return client?client.season===season:false;
   });
@@ -440,7 +457,7 @@ export default function App(){
     return ms&&(!filt.country||ca.some(a=>a.country?.trim()===filt.country))&&(!filt.status||ca.some(a=>a.ourProgress===filt.status))&&(!filt.school||ca.some(a=>a.schoolStatus===filt.school))&&(!filt.service||c.service===filt.service)&&(!filt.year||c.year===filt.year);
   });
 
-  const cApps=sel?applications.filter(a=>a.clientId===sel.id):[];
+  const cApps=sel?applications.filter(a=>a.clientName.toLowerCase()===sel.name.toLowerCase()):[];
   const SI={background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:6,padding:"8px 12px",color:"#f9fafb",fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",cursor:"pointer"};
   const navActive = id => view===id||(view==="client"&&id==="clients");
 
@@ -638,9 +655,10 @@ export default function App(){
               <button key={t.id} onClick={()=>sTab(t.id)} style={{background:"none",border:"none",padding:"10px 20px",cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:tab===t.id?700:400,color:tab===t.id?BLUE:"#6b7280",borderBottom:tab===t.id?`2px solid ${BLUE}`:"2px solid transparent",marginBottom:-1,letterSpacing:"0.01em"}}>{t.label}</button>
             ))}
           </div>
-          {tab==="applications"&&(cApps.length===0?<div style={{color:"#6b7280",padding:20}}>No applications found.</div>:
-            <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              {cApps.map((app,i)=>(
+          {tab==="applications"&&(<div style={{display:"flex",flexDirection:"column",gap:12}}>
+            {can("applications")&&<button onClick={()=>sAddAppModal(true)} style={{alignSelf:"flex-start",background:BLUE,border:"none",borderRadius:6,padding:"9px 18px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Add Application</button>}
+            {cApps.length===0?<div style={{color:"#6b7280",padding:"12px 0"}}>No applications yet for {season} intake.</div>:
+              cApps.map((app,i)=>(
                 <div key={i} style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"18px 22px"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12,marginBottom:10}}>
                     <div><div style={{fontWeight:700,fontSize:15,color:"#f9fafb",marginBottom:2}}>{app.university}</div><div style={{fontSize:13,color:"#6b7280"}}>{app.programme} · <span style={{color:BLUE}}>{app.country}</span></div></div>
@@ -651,9 +669,9 @@ export default function App(){
                   </div>
                   {app.notes&&<div style={{background:BG,borderRadius:6,padding:"8px 12px",fontSize:13,color:"#9ca3af",fontStyle:"italic",border:`1px solid ${BORDER}`,marginTop:10}}>📝 {app.notes}</div>}
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            }
+          </div>)}
           {tab==="documents"&&(
             <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:22}}>
               <div style={{fontWeight:700,color:"#f9fafb",marginBottom:16,fontSize:14}}>Documents ({sel.documents.length})</div>
@@ -993,6 +1011,42 @@ export default function App(){
         <div style={{display:"flex",gap:10}}>
           <button onClick={()=>sEditApp(null)} style={{flex:1,background:BLUE_MID,border:`1px solid ${BORDER}`,borderRadius:6,padding:"11px",color:"#9ca3af",fontWeight:600,fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Cancel</button>
           <button onClick={updateApplication} disabled={savingApp} style={{flex:2,background:BLUE,border:"none",borderRadius:6,padding:"11px",color:"#fff",fontWeight:700,fontSize:14,cursor:savingApp?"not-allowed":"pointer",opacity:savingApp?0.6:1,fontFamily:"Arial,sans-serif"}}>{savingApp?"Saving...":"Save"}</button>
+        </div>
+      </div>
+    </div>}
+    {addAppModal&&sel&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial,sans-serif"}}>
+      <div style={{background:"#0f1923",border:`1px solid ${BORDER}`,borderRadius:14,padding:"32px",width:520,maxWidth:"92vw",maxHeight:"90vh",overflowY:"auto"}}>
+        <div style={{fontSize:18,fontWeight:700,color:"#f9fafb",marginBottom:4}}>Add Application</div>
+        <div style={{fontSize:13,color:"#6b7280",marginBottom:24}}>{sel.name} · {season} Intake</div>
+        {[["University / School","university","text","e.g. University of Bologna"],["Country","country","text","e.g. Italy"],["Programme","programme","text","e.g. MSc Computer Science"],["Application Period","period","text","e.g. 1 Nov - 31 Jan"],["Application Fee","appFee","text","e.g. Free / €30"],["Tuition","tuition","text","e.g. €2,000/year"]].map(([lbl,key,type,ph])=>(
+          <div key={key} style={{marginBottom:14}}>
+            <label style={{fontSize:12,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:6,fontWeight:600}}>{lbl}</label>
+            <input type={type} value={addAppFields[key]} onChange={e=>sAddAppFields(f=>({...f,[key]:e.target.value}))} placeholder={ph}
+              style={{width:"100%",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"10px 14px",color:"#f9fafb",fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"Arial,sans-serif"}}/>
+          </div>
+        ))}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+          <div>
+            <label style={{fontSize:12,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:6,fontWeight:600}}>Our Progress</label>
+            <select value={addAppFields.ourProgress} onChange={e=>sAddAppFields(f=>({...f,ourProgress:e.target.value}))} style={{width:"100%",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"10px 14px",color:"#f9fafb",fontSize:14,outline:"none",fontFamily:"Arial,sans-serif"}}>
+              {Object.keys(SC).map(v=><option key={v} value={v}>{v}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{fontSize:12,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:6,fontWeight:600}}>School Status</label>
+            <select value={addAppFields.schoolStatus} onChange={e=>sAddAppFields(f=>({...f,schoolStatus:e.target.value}))} style={{width:"100%",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"10px 14px",color:"#f9fafb",fontSize:14,outline:"none",fontFamily:"Arial,sans-serif"}}>
+              {Object.keys(KC).map(v=><option key={v} value={v}>{v}</option>)}
+            </select>
+          </div>
+        </div>
+        <div style={{marginBottom:24}}>
+          <label style={{fontSize:12,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:6,fontWeight:600}}>Notes</label>
+          <textarea value={addAppFields.notes} onChange={e=>sAddAppFields(f=>({...f,notes:e.target.value}))} rows={3} placeholder="Internal notes..."
+            style={{width:"100%",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"10px 14px",color:"#f9fafb",fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"Arial,sans-serif",resize:"vertical"}}/>
+        </div>
+        <div style={{display:"flex",gap:10}}>
+          <button onClick={()=>sAddAppModal(false)} style={{flex:1,background:BLUE_MID,border:`1px solid ${BORDER}`,borderRadius:6,padding:"11px",color:"#9ca3af",fontWeight:600,fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Cancel</button>
+          <button onClick={saveNewApp} disabled={savingAddApp||!addAppFields.university.trim()} style={{flex:2,background:BLUE,border:"none",borderRadius:6,padding:"11px",color:"#fff",fontWeight:700,fontSize:14,cursor:savingAddApp||!addAppFields.university.trim()?"not-allowed":"pointer",opacity:savingAddApp||!addAppFields.university.trim()?0.6:1,fontFamily:"Arial,sans-serif"}}>{savingAddApp?"Saving...":"Save Application"}</button>
         </div>
       </div>
     </div>}
