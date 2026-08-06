@@ -1018,7 +1018,7 @@ export default function App(){
       <div style={{background:"#0f1923",border:`1px solid ${BORDER}`,borderRadius:14,padding:"32px",width:520,maxWidth:"92vw",maxHeight:"90vh",overflowY:"auto"}}>
         <div style={{fontSize:18,fontWeight:700,color:"#f9fafb",marginBottom:4}}>Add Application</div>
         <div style={{fontSize:13,color:"#6b7280",marginBottom:24}}>{sel.name} · {season} Intake</div>
-        {[["University / School","university","text","e.g. University of Bologna"],["Country","country","text","e.g. Italy"],["Programme","programme","text","e.g. MSc Computer Science"],...(season!=="2027"?[["Application Period","period","text","e.g. 1 Nov - 31 Jan"],["Application Fee","appFee","text","e.g. Free / €30"],["Tuition","tuition","text","e.g. €2,000/year"]]:[])] .map(([lbl,key,type,ph])=>(
+        {(()=>{const baseFields=[["University / School","university","text","e.g. University of Bologna"],["Country","country","text","e.g. Italy"],["Programme","programme","text","e.g. MSc Computer Science"]];const extraFields=season!=="2027"?[["Application Period","period","text","e.g. 1 Nov - 31 Jan"],["Application Fee","appFee","text","e.g. Free / €30"],["Tuition","tuition","text","e.g. €2,000/year"]]:[];return[...baseFields,...extraFields];})().map(([lbl,key,type,ph])=>(
           <div key={key} style={{marginBottom:14}}>
             <label style={{fontSize:12,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:6,fontWeight:600}}>{lbl}</label>
             <input type={type} value={addAppFields[key]} onChange={e=>sAddAppFields(f=>({...f,[key]:e.target.value}))} placeholder={ph}
