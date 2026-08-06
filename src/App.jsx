@@ -280,8 +280,11 @@ export default function App(){
     sAddAppFields({university:"",country:"",programme:"",period:"",appFee:"",tuition:"",ourProgress:"Not Started",schoolStatus:"No Status Yet",notes:""});
     sSavingAddApp(false);
     try {
-      await fetch(SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"addApplication",clientName:sel.name,season,...addAppFields})});
-    } catch(e){console.error("Sheet sync failed:",e);alert("Application added to dashboard but failed to save to sheet. Please add manually.");}
+      const res=await fetch(SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"addApplication",clientName:sel.name,season,...addAppFields})});
+      const txt=await res.text();
+      const json=JSON.parse(txt);
+      if(!json.success) alert("Sheet error: "+json.error);
+    } catch(e){console.error("Sheet sync failed:",e);alert("Network error: "+e.message);}
   };
 
   const updateApplication = async () => {
