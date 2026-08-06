@@ -267,7 +267,7 @@ export default function App(){
     sAddClientDocs([]);
     sSavingAddClient(false);
     try {
-      await fetch(SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"addClient",...addClientFields,documents:docsStr,season})});
+      await fetch(SHEET_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"addClient",...addClientFields,documents:docsStr,season})});
     } catch(e){console.error("Sheet sync failed:",e);alert("Client added to dashboard but failed to save to sheet. Please add manually.");}
   };
 
@@ -280,10 +280,7 @@ export default function App(){
     sAddAppFields({university:"",country:"",programme:"",period:"",appFee:"",tuition:"",ourProgress:"Not Started",schoolStatus:"No Status Yet",notes:""});
     sSavingAddApp(false);
     try {
-      const res=await fetch(SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"addApplication",clientName:sel.name,season,...addAppFields})});
-      const txt=await res.text();
-      const json=JSON.parse(txt);
-      if(!json.success) alert("Sheet error: "+json.error);
+      await fetch(SHEET_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"addApplication",clientName:sel.name,season,...addAppFields})});
     } catch(e){console.error("Sheet sync failed:",e);alert("Network error: "+e.message);}
   };
 
@@ -291,7 +288,7 @@ export default function App(){
     if(!editApp) return;
     sSavingApp(true);
     try {
-      await fetch(SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"updateApplication",clientName:editApp.clientName,university:editApp.university,ourProgress:editAppFields.ourProgress,schoolStatus:editAppFields.schoolStatus,notes:editAppFields.notes})});
+      await fetch(SHEET_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"updateApplication",clientName:editApp.clientName,university:editApp.university,ourProgress:editAppFields.ourProgress,schoolStatus:editAppFields.schoolStatus,notes:editAppFields.notes})});
       sD(d=>({...d,applications:d.applications.map(a=>a.clientId===editApp.clientId&&a.university===editApp.university?{...a,...editAppFields}:a)}));
       sEditApp(null);
     } catch(e){console.error(e);}
@@ -302,7 +299,7 @@ export default function App(){
     if(editPaidVal==="") return;
     sSavingPaid(true);
     try {
-      await fetch(SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"updateAmountPaid",name:sel.name,value:editPaidVal})});
+      await fetch(SHEET_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"updateAmountPaid",name:sel.name,value:editPaidVal})});
       const newPaid=Number(editPaidVal);
       const updated={...sel,paid:newPaid,outstanding:sel.payable-newPaid};
       sD(d=>({...d,applicants:d.applicants.map(a=>a.id===sel.id?updated:a)}));
