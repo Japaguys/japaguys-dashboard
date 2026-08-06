@@ -227,6 +227,11 @@ export default function App(){
   const [addAppModal,sAddAppModal]=useState(false);
   const [addAppFields,sAddAppFields]=useState({university:"",country:"",programme:"",period:"",appFee:"",tuition:"",ourProgress:"Not Started",schoolStatus:"No Status Yet",notes:""});
   const [savingAddApp,sSavingAddApp]=useState(false);
+  const [addClientModal,sAddClientModal]=useState(false);
+  const [addClientFields,sAddClientFields]=useState({name:"",email:"",phone:"",address:"",level:"Masters",field:"",service:"Done-For-You",payable:"",year:""});
+  const [addClientDocs,sAddClientDocs]=useState([]);
+  const [addClientDocInput,sAddClientDocInput]=useState("");
+  const [savingAddClient,sSavingAddClient]=useState(false);
   const [editPaid,sEditPaid]=useState(false);
   const [editPaidVal,sEditPaidVal]=useState("");
   const [savingPaid,sSavingPaid]=useState(false);
@@ -248,6 +253,23 @@ export default function App(){
 
   useEffect(()=>{ const u=onAuthStateChanged(auth,u=>{ sU(u); sR(true); if(u&&!u.displayName) sNamePrompt(true); }); return u; },[]);
   useEffect(()=>{ if(user&&!user.displayName&&!auth.currentUser?.displayName) sNamePrompt(true); },[user]);
+
+  const saveNewClient = async () => {
+    if(!addClientFields.name.trim()) return;
+    sSavingAddClient(true);
+    try {
+      const docsStr=addClientDocs.join(",");
+      await fetch(SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"addClient",...addClientFields,documents:docsStr,season})});
+      const newId=`JAP${String(allApplicants.length+1).padStart(3,"0")}`;
+      const payable=Number(addClientFields.payable)||0;
+      const newClient={id:newId,...addClientFields,payable,paid:0,outstanding:payable,documents:addClientDocs,lastContacted:"",lastContactNotes:"",season};
+      sD(d=>({...d,applicants:[...d.applicants,newClient]}));
+      sAddClientModal(false);
+      sAddClientFields({name:"",email:"",phone:"",address:"",level:"Masters",field:"",service:"Done-For-You",payable:"",year:""});
+      sAddClientDocs([]);
+    } catch(e){console.error(e);}
+    sSavingAddClient(false);
+  };
 
   const saveNewApp = async () => {
     if(!addAppFields.university.trim()||!sel) return;
@@ -580,6 +602,7 @@ export default function App(){
 
         {/* ── CLIENTS ── */}
         {view==="clients"&&<div>
+          {can("applications")&&<div style={{display:"flex",justifyContent:"flex-end",marginBottom:14}}><button onClick={()=>sAddClientModal(true)} style={{background:BLUE,border:"none",borderRadius:6,padding:"9px 20px",color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Add Client</button></div>}
           <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"18px 22px",marginBottom:20}}>
             <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12,fontWeight:600}}>Search & Filter</div>
             <div className="filter-row" style={{display:"flex",gap:8,flexWrap:"wrap"}}>
@@ -1011,6 +1034,53 @@ export default function App(){
         <div style={{display:"flex",gap:10}}>
           <button onClick={()=>sEditApp(null)} style={{flex:1,background:BLUE_MID,border:`1px solid ${BORDER}`,borderRadius:6,padding:"11px",color:"#9ca3af",fontWeight:600,fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Cancel</button>
           <button onClick={updateApplication} disabled={savingApp} style={{flex:2,background:BLUE,border:"none",borderRadius:6,padding:"11px",color:"#fff",fontWeight:700,fontSize:14,cursor:savingApp?"not-allowed":"pointer",opacity:savingApp?0.6:1,fontFamily:"Arial,sans-serif"}}>{savingApp?"Saving...":"Save"}</button>
+        </div>
+      </div>
+    </div>}
+    {addClientModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial,sans-serif"}}>
+      <div style={{background:"#0f1923",border:`1px solid ${BORDER}`,borderRadius:14,padding:"32px",width:540,maxWidth:"92vw",maxHeight:"90vh",overflowY:"auto"}}>
+        <div style={{fontSize:18,fontWeight:700,color:"#f9fafb",marginBottom:4}}>Add Client</div>
+        <div style={{fontSize:13,color:"#6b7280",marginBottom:24}}>{season} Intake</div>
+        {[["Full Name","name","text","e.g. John Doe"],["Email","email","email","e.g. john@email.com"],["Phone","phone","text","e.g. +234 800 000 0000"],["Address","address","text","e.g. Lagos, Nigeria"],["Field of Study","field","text","e.g. Computer Science"],["Target Entry Year","year","text","e.g. 2027"],["Service Fee (₦)","payable","number","e.g. 500000"]].map(([lbl,key,type,ph])=>(
+          <div key={key} style={{marginBottom:14}}>
+            <label style={{fontSize:12,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:6,fontWeight:600}}>{lbl}</label>
+            <input type={type} value={addClientFields[key]} onChange={e=>sAddClientFields(f=>({...f,[key]:e.target.value}))} placeholder={ph}
+              style={{width:"100%",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"10px 14px",color:"#f9fafb",fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"Arial,sans-serif"}}/>
+          </div>
+        ))}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+          <div>
+            <label style={{fontSize:12,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:6,fontWeight:600}}>Level</label>
+            <select value={addClientFields.level} onChange={e=>sAddClientFields(f=>({...f,level:e.target.value}))} style={{width:"100%",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"10px 14px",color:"#f9fafb",fontSize:14,outline:"none",fontFamily:"Arial,sans-serif"}}>
+              <option>Bachelors</option><option>Masters</option><option>PhD</option>
+            </select>
+          </div>
+          <div>
+            <label style={{fontSize:12,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:6,fontWeight:600}}>Service Type</label>
+            <select value={addClientFields.service} onChange={e=>sAddClientFields(f=>({...f,service:e.target.value}))} style={{width:"100%",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"10px 14px",color:"#f9fafb",fontSize:14,outline:"none",fontFamily:"Arial,sans-serif"}}>
+              <option>Done-For-You</option><option>Do-It-Yourself</option>
+            </select>
+          </div>
+        </div>
+        <div style={{marginBottom:14}}>
+          <label style={{fontSize:12,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:6,fontWeight:600}}>Documents</label>
+          <div style={{display:"flex",gap:8,marginBottom:8}}>
+            <input value={addClientDocInput} onChange={e=>sAddClientDocInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&addClientDocInput.trim()){sAddClientDocs(d=>[...d,addClientDocInput.trim()]);sAddClientDocInput("");}}} placeholder="Type document name, press Enter"
+              style={{flex:1,background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"10px 14px",color:"#f9fafb",fontSize:14,outline:"none",fontFamily:"Arial,sans-serif"}}/>
+            <button onClick={()=>{if(addClientDocInput.trim()){sAddClientDocs(d=>[...d,addClientDocInput.trim()]);sAddClientDocInput("");}}} style={{background:BLUE_MID,border:`1px solid ${BORDER}`,borderRadius:6,padding:"10px 14px",color:"#9ca3af",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Add</button>
+          </div>
+          {addClientDocs.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+            {addClientDocs.map((doc,i)=>(
+              <span key={i} style={{background:"#064e3b",border:"1px solid #10b98133",borderRadius:6,padding:"5px 10px",fontSize:12,color:"#34d399",display:"flex",alignItems:"center",gap:6}}>
+                {doc}
+                <button onClick={()=>sAddClientDocs(d=>d.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:"#34d399",cursor:"pointer",fontSize:12,padding:0,fontFamily:"Arial,sans-serif"}}>✕</button>
+              </span>
+            ))}
+          </div>}
+        </div>
+        <div style={{display:"flex",gap:10,marginTop:8}}>
+          <button onClick={()=>{sAddClientModal(false);sAddClientDocs([]);sAddClientDocInput("");}} style={{flex:1,background:BLUE_MID,border:`1px solid ${BORDER}`,borderRadius:6,padding:"11px",color:"#9ca3af",fontWeight:600,fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Cancel</button>
+          <button onClick={saveNewClient} disabled={savingAddClient||!addClientFields.name.trim()} style={{flex:2,background:BLUE,border:"none",borderRadius:6,padding:"11px",color:"#fff",fontWeight:700,fontSize:14,cursor:savingAddClient||!addClientFields.name.trim()?"not-allowed":"pointer",opacity:savingAddClient||!addClientFields.name.trim()?0.6:1,fontFamily:"Arial,sans-serif"}}>{savingAddClient?"Saving...":"Save Client"}</button>
         </div>
       </div>
     </div>}
