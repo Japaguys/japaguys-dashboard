@@ -400,16 +400,14 @@ export default function App(){
   useEffect(()=>{
     if(!user) return;
     const CACHE_KEY="jap_sheet_cache";
-    const CACHE_TTL=5*60*1000;
-    // Serve cached data instantly if fresh enough
-    let servedFromCache=false;
+    // Always serve cache instantly (no spinner) if we have anything cached
     try {
       const cached=JSON.parse(localStorage.getItem(CACHE_KEY)||"null");
-      if(cached&&(Date.now()-cached.ts)<CACHE_TTL){sD(cached.data);sL(false);return;}
-      if(cached){sD(cached.data);sL(false);servedFromCache=true;}// stale: show now, refresh silently
-    } catch(e){}
-    if(!servedFromCache) sL(true);
-    // Reuse the prefetch promise that fired at module load — avoids a second round trip
+      if(cached){sD(cached.data);sL(false);}
+      else sL(true);
+    } catch(e){sL(true);}
+    // Always do a background refresh on every load — keeps data current
+    // Reuse the prefetch promise that started at module load (no extra round trip)
     _sheetPrefetch.then(raw=>{
       if(!raw||!raw.applicants){sL(false);return;}
       const parsed=parseRaw(raw);
