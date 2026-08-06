@@ -268,6 +268,7 @@ export default function App(){
   const [slShowModal,sSlShowModal]=useState(false);
   const [slDownloading,sSlDownloading]=useState(false);
   const slPrintRef=useRef(null);
+  const [refreshing,sRefreshing]=useState(false);
   const [openCountry,sOpenCountry]=useState("");
   const [openLevel,sOpenLevel]=useState("");
   const [openType,sOpenType]=useState("");
@@ -399,7 +400,7 @@ export default function App(){
   useEffect(()=>{
     if(!user) return;
     const CACHE_KEY="jap_sheet_cache";
-    const CACHE_TTL=30*60*1000;
+    const CACHE_TTL=5*60*1000;
     // Serve cached data instantly if fresh enough
     let servedFromCache=false;
     try {
@@ -506,6 +507,20 @@ export default function App(){
     sSlDownloading(false);
   };
 
+  const refreshDashboard=async()=>{
+    if(refreshing) return;
+    sRefreshing(true);
+    try {
+      const raw=await fetch(SHEET_URL+"?_t="+Date.now()).then(r=>r.json());
+      if(raw&&raw.applicants){
+        const parsed=parseRaw(raw);
+        try{localStorage.setItem("jap_sheet_cache",JSON.stringify({ts:Date.now(),data:parsed}));}catch(e){}
+        sD(parsed);
+      }
+    } catch(e){console.error("Refresh failed:",e);}
+    sRefreshing(false);
+  };
+
   const filteredOpps=opportunities.filter(o=>{
     if(browseSearch&&!o.school.toLowerCase().includes(browseSearch.toLowerCase())) return false;
     if(browseCountry&&o.country!==browseCountry) return false;
@@ -579,9 +594,15 @@ export default function App(){
             <div style={{fontSize:12,color:BLUE,fontWeight:700,letterSpacing:"0.08em",marginBottom:4,textTransform:"uppercase"}}>{gr}, {nm} 👋</div>
             <div style={{fontSize:26,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"-0.01em"}}>{view==="summary"?`Overview - ${season} Intake`:view==="clients"?"All Clients":view==="opportunities"?"Opportunities":sel?.name||""}</div>
           </div>
-          <div className="topbar-right" style={{textAlign:"right"}}>
-            <div style={{fontSize:22,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"0.05em"}}>{fT(now)}</div>
-            <div style={{fontSize:12,color:"#6b7280",marginTop:3}}>{fD(now)}</div>
+          <div className="topbar-right" style={{textAlign:"right",display:"flex",alignItems:"center",gap:16}}>
+            <button onClick={refreshDashboard} disabled={refreshing} title="Sync latest data from Google Sheets" style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"8px 14px",color:refreshing?"#4b5563":"#9ca3af",fontSize:13,cursor:refreshing?"default":"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:6,transition:"all 0.2s"}}>
+              <span style={{display:"inline-block",animation:refreshing?"spin 0.8s linear infinite":"none",fontSize:15}}>↻</span>
+              {refreshing?"Syncing…":"Refresh"}
+            </button>
+            <div>
+              <div style={{fontSize:22,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"0.05em"}}>{fT(now)}</div>
+              <div style={{fontSize:12,color:"#6b7280",marginTop:3}}>{fD(now)}</div>
+            </div>
           </div>
         </div>
 
