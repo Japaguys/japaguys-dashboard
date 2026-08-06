@@ -267,9 +267,11 @@ export default function App(){
     sAddClientDocs([]);
     sSavingAddClient(false);
     try {
-      await fetch(SHEET_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"addClient",...addClientFields,documents:docsStr,season})});
-      localStorage.removeItem("jap_sheet_cache");
-    } catch(e){console.error("Sheet sync failed:",e);alert("Client added to dashboard but failed to save to sheet. Please add manually.");}
+      const p=new URLSearchParams({action:"addClient",...addClientFields,documents:docsStr,season});
+      await fetch(SHEET_URL+"?"+p.toString());
+      const cached=JSON.parse(localStorage.getItem("jap_sheet_cache")||"null");
+      if(cached){cached.data.applicants=[...cached.data.applicants,newClient];cached.ts=Date.now();try{localStorage.setItem("jap_sheet_cache",JSON.stringify(cached));}catch(e){}}
+    } catch(e){console.error("Sheet sync failed:",e);}
   };
 
   const saveNewApp = async () => {
@@ -281,8 +283,10 @@ export default function App(){
     sAddAppFields({university:"",country:"",programme:"",period:"",appFee:"",tuition:"",ourProgress:"Not Started",schoolStatus:"No Status Yet",notes:""});
     sSavingAddApp(false);
     try {
-      await fetch(SHEET_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"addApplication",clientName:sel.name,season,...addAppFields})});
-      localStorage.removeItem("jap_sheet_cache");
+      const p=new URLSearchParams({action:"addApplication",clientName:sel.name,season,...addAppFields});
+      await fetch(SHEET_URL+"?"+p.toString());
+      const cached=JSON.parse(localStorage.getItem("jap_sheet_cache")||"null");
+      if(cached){cached.data.applications=[...cached.data.applications,newApp];cached.ts=Date.now();try{localStorage.setItem("jap_sheet_cache",JSON.stringify(cached));}catch(e){}}
     } catch(e){console.error("Sheet sync failed:",e);}
   };
 
