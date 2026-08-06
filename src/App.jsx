@@ -257,31 +257,31 @@ export default function App(){
   const saveNewClient = async () => {
     if(!addClientFields.name.trim()) return;
     sSavingAddClient(true);
-    try {
-      const docsStr=addClientDocs.join(",");
-      await fetch(SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"addClient",...addClientFields,documents:docsStr,season})});
-      const newId=`JAP${String(allApplicants.length+1).padStart(3,"0")}`;
-      const payable=Number(addClientFields.payable)||0;
-      const newClient={id:newId,...addClientFields,payable,paid:0,outstanding:payable,documents:addClientDocs,lastContacted:"",lastContactNotes:"",season};
-      sD(d=>({...d,applicants:[...d.applicants,newClient]}));
-      sAddClientModal(false);
-      sAddClientFields({name:"",email:"",phone:"",address:"",level:"Masters",field:"",service:"Done-For-You",payable:"",year:""});
-      sAddClientDocs([]);
-    } catch(e){console.error(e);}
+    const docsStr=addClientDocs.join(",");
+    const newId=`JAP${String(allApplicants.length+1).padStart(3,"0")}`;
+    const payable=Number(addClientFields.payable)||0;
+    const newClient={id:newId,...addClientFields,payable,paid:0,outstanding:payable,documents:addClientDocs,lastContacted:"",lastContactNotes:"",season};
+    sD(d=>({...d,applicants:[...d.applicants,newClient]}));
+    sAddClientModal(false);
+    sAddClientFields({name:"",email:"",phone:"",address:"",level:"Masters",field:"",service:"Done-For-You",payable:"",year:""});
+    sAddClientDocs([]);
     sSavingAddClient(false);
+    try {
+      await fetch(SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"addClient",...addClientFields,documents:docsStr,season})});
+    } catch(e){console.error("Sheet sync failed:",e);alert("Client added to dashboard but failed to save to sheet. Please add manually.");}
   };
 
   const saveNewApp = async () => {
     if(!addAppFields.university.trim()||!sel) return;
     sSavingAddApp(true);
+    const newApp={...addAppFields,clientName:sel.name,clientId:sel.id,season};
+    sD(d=>({...d,applications:[...d.applications,newApp]}));
+    sAddAppModal(false);
+    sAddAppFields({university:"",country:"",programme:"",period:"",appFee:"",tuition:"",ourProgress:"Not Started",schoolStatus:"No Status Yet",notes:""});
+    sSavingAddApp(false);
     try {
       await fetch(SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"addApplication",clientName:sel.name,season,...addAppFields})});
-      const newApp={...addAppFields,clientName:sel.name,clientId:sel.id,season};
-      sD(d=>({...d,applications:[...d.applications,newApp]}));
-      sAddAppModal(false);
-      sAddAppFields({university:"",country:"",programme:"",period:"",appFee:"",tuition:"",ourProgress:"Not Started",schoolStatus:"No Status Yet",notes:""});
-    } catch(e){console.error(e);}
-    sSavingAddApp(false);
+    } catch(e){console.error("Sheet sync failed:",e);alert("Application added to dashboard but failed to save to sheet. Please add manually.");}
   };
 
   const updateApplication = async () => {
