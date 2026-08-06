@@ -383,7 +383,7 @@ export default function App(){
     if(!servedFromCache) sL(true);
     // Reuse the prefetch promise that fired at module load — avoids a second round trip
     _sheetPrefetch.then(raw=>{
-      if(!raw) return;
+      if(!raw||!raw.applicants){sL(false);return;}
       const parsed=parseRaw(raw);
       try{localStorage.setItem(CACHE_KEY,JSON.stringify({ts:Date.now(),data:parsed}));}catch(e){}
       sD(parsed); sL(false);
