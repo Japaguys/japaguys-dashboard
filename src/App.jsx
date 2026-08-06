@@ -268,7 +268,7 @@ export default function App(){
     sSavingAddClient(false);
     try {
       const p=new URLSearchParams({action:"addClient",...addClientFields,documents:docsStr,season});
-      await fetch(SHEET_URL+"?"+p.toString());
+      await fetch(SHEET_URL+"?"+p.toString(),{mode:"no-cors"});
       const cached=JSON.parse(localStorage.getItem("jap_sheet_cache")||"null");
       if(cached){cached.data.applicants=[...cached.data.applicants,newClient];cached.ts=Date.now();try{localStorage.setItem("jap_sheet_cache",JSON.stringify(cached));}catch(e){}}
     } catch(e){console.error("Sheet sync failed:",e);}
@@ -284,7 +284,7 @@ export default function App(){
     sSavingAddApp(false);
     try {
       const p=new URLSearchParams({action:"addApplication",clientName:sel.name,season,...addAppFields});
-      await fetch(SHEET_URL+"?"+p.toString());
+      await fetch(SHEET_URL+"?"+p.toString(),{mode:"no-cors"});
       const cached=JSON.parse(localStorage.getItem("jap_sheet_cache")||"null");
       if(cached){cached.data.applications=[...cached.data.applications,newApp];cached.ts=Date.now();try{localStorage.setItem("jap_sheet_cache",JSON.stringify(cached));}catch(e){}}
     } catch(e){console.error("Sheet sync failed:",e);}
