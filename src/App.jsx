@@ -569,7 +569,7 @@ export default function App(){
           <div style={{fontSize:11,color:"#4b5563",marginTop:6,letterSpacing:"0.05em"}}>Operations Dashboard</div>
         </div>
         {[{id:"summary",icon:"⊞",label:"Overview"},{id:"clients",icon:"👥",label:"All Clients"},{id:"opportunities",icon:"🌍",label:"Opportunities"},{id:"erasmus",icon:"🎓",label:"Erasmus Mundus"}].map(item=>(
-          <button key={item.id} onClick={()=>{sV(item.id);sSel(null);sS("");sMenu(false);sOppTab("browse");sEmSearch("");sEmCountry("");sEmStatus("all");sEmExpanded(new Set());}}
+          <button key={item.id} onClick={()=>{sV(item.id);sSel(null);sS("");sMenu(false);sOppTab("browse");sEmSearch("");sEmCountry("");sEmStatus("all");sEmExpanded(new Set());window.scrollTo(0,0);}}
             style={{display:"flex",alignItems:"center",gap:10,padding:"11px 20px",background:navActive(item.id)?"#1a2740":"none",border:"none",borderLeft:navActive(item.id)?`3px solid ${BLUE}`:"3px solid transparent",color:navActive(item.id)?"#f9fafb":"#6b7280",cursor:"pointer",fontSize:13,fontWeight:navActive(item.id)?700:400,fontFamily:"Arial,sans-serif",textAlign:"left",width:"100%",letterSpacing:"0.01em"}}>
             <span style={{fontSize:14}}>{item.icon}</span>{item.label}
             {item.id==="clients"&&<span style={{marginLeft:"auto",fontSize:11,background:"#0d2d6b",color:"#93c5fd",padding:"1px 7px",borderRadius:10,fontWeight:700}}>{tc}</span>}
@@ -1090,6 +1090,7 @@ export default function App(){
         {view==="erasmus"&&(()=>{
           const today=new Date(); today.setHours(0,0,0,0);
           const parseEMDate=s=>{if(!s)return null;const d=new Date(s);return isNaN(d)?null:d;};
+          const fmtDate=s=>{const d=parseEMDate(s);if(!d)return s||"";return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});};
           const emStatus_badge=prog=>{
             const o=parseEMDate(prog.opens), c=parseEMDate(prog.closes);
             if(o&&c){if(today>=o&&today<=c)return{label:"Open Now",bg:"#14532d",color:"#4ade80"};if(today<o)return{label:"Opening Soon",bg:"#451a03",color:"#fb923c"};}
@@ -1145,8 +1146,8 @@ export default function App(){
                         <div style={{fontSize:12,color:"#9ca3af",marginBottom:6}}>{p.field}</div>
                         <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
                           <span style={{fontSize:12,color:"#6b7280"}}>🌍 {p.countries}</span>
-                          {p.opens&&<span style={{fontSize:12,color:"#6b7280"}}>Opens: <strong style={{color:"#d1d5db"}}>{p.opens}</strong></span>}
-                          {p.closes&&<span style={{fontSize:12,color:"#6b7280"}}>Closes: <strong style={{color:"#d1d5db"}}>{p.closes}</strong></span>}
+                          {p.opens&&<span style={{fontSize:12,color:"#6b7280"}}>Opens: <strong style={{color:"#d1d5db"}}>{fmtDate(p.opens)}</strong></span>}
+                          {p.closes&&<span style={{fontSize:12,color:"#6b7280"}}>Closes: <strong style={{color:"#d1d5db"}}>{fmtDate(p.closes)}</strong></span>}
                           {p.fee&&p.fee.toLowerCase()!=="none"&&<span style={{fontSize:12,color:"#6b7280"}}>Fee: <strong style={{color:"#d1d5db"}}>{p.fee}</strong></span>}
                           {(p.fee==="None"||!p.fee)&&<span style={{fontSize:12,color:"#4ade80"}}>No app fee</span>}
                         </div>
