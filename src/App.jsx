@@ -990,6 +990,102 @@ export default function App(){
           </div>}
         </div>;
         })()}
+        {view==="erasmus"&&(()=>{
+          const today=new Date(); today.setHours(0,0,0,0);
+          const parseEMDate=s=>{if(!s)return null;const d=new Date(s);return isNaN(d)?null:d;};
+          const fmtDate=s=>{const d=parseEMDate(s);if(!d)return s||"";return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});};
+          const emStatus_badge=prog=>{
+            const o=parseEMDate(prog.opens), c=parseEMDate(prog.closes);
+            if(o&&c){if(today>=o&&today<=c)return{label:"Open Now",bg:"#14532d",color:"#4ade80"};if(today<o)return{label:"Opening Soon",bg:"#451a03",color:"#fb923c"};}
+            if(c&&today>c)return{label:"Closed",bg:"#1f2937",color:"#6b7280"};
+            return{label:"Check Dates",bg:"#1e3a5f",color:"#60a5fa"};
+          };
+          const emCountries=[...new Set(erasmusMundus.flatMap(p=>p.countries.split(",").map(c=>c.trim()).filter(Boolean)))].sort();
+          const filtered=erasmusMundus.filter(p=>{
+            if(emSearch){const q=emSearch.toLowerCase();if(!p.field.toLowerCase().includes(q)&&!p.name.toLowerCase().includes(q)) return false;}
+            if(emCountry&&!p.countries.toLowerCase().includes(emCountry.toLowerCase())) return false;
+            if(emStatus==="open"){const b=emStatus_badge(p);if(b.label!=="Open Now")return false;}
+            if(emStatus==="soon"){const b=emStatus_badge(p);if(b.label!=="Opening Soon")return false;}
+            return true;
+          });
+          const toggleExpand=i=>sEmExpanded(s=>{const n=new Set(s);n.has(i)?n.delete(i):n.add(i);return n;});
+          return <div>
+            <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"14px 18px",marginBottom:20}}>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
+                <input value={emSearch} onChange={e=>sEmSearch(e.target.value)} placeholder="Search by field (e.g. health, engineering, law…)" style={{flex:"1 1 220px",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"9px 14px",color:"#f9fafb",fontSize:13,outline:"none",fontFamily:"Arial,sans-serif"}}/>
+                <select value={emCountry} onChange={e=>sEmCountry(e.target.value)} style={{flex:"0 1 170px",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"9px 12px",color:"#f9fafb",fontSize:13,outline:"none",fontFamily:"Arial,sans-serif"}}>
+                  <option value="">All Countries</option>
+                  {emCountries.map(c=><option key={c} value={c}>{c}</option>)}
+                </select>
+                <select value={emStatus} onChange={e=>sEmStatus(e.target.value)} style={{flex:"0 1 160px",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"9px 12px",color:"#f9fafb",fontSize:13,outline:"none",fontFamily:"Arial,sans-serif"}}>
+                  <option value="all">All Statuses</option>
+                  <option value="open">Open Now</option>
+                  <option value="soon">Opening Soon</option>
+                </select>
+                {(emSearch||emCountry||emStatus!=="all")&&<button onClick={()=>{sEmSearch("");sEmCountry("");sEmStatus("all");}} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"9px 14px",color:"#6b7280",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕ Clear</button>}
+              </div>
+              <div style={{marginTop:10,fontSize:12,color:"#4b5563"}}>Showing <strong style={{color:"#f9fafb"}}>{filtered.length}</strong> of {erasmusMundus.length} programmes · All fully funded (Erasmus Mundus scholarship)</div>
+            </div>
+            {filtered.length===0&&<div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"40px",textAlign:"center",color:"#6b7280",fontSize:13}}>No programmes match your filters.</div>}
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              {filtered.map((p,i)=>{
+                const badge=emStatus_badge(p);
+                const expanded=emExpanded.has(i);
+                return(
+                  <div key={i} style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,overflow:"hidden"}}>
+                    <div onClick={()=>toggleExpand(i)} style={{padding:"16px 20px",cursor:"pointer",display:"flex",gap:16,alignItems:"flex-start"}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:6}}>
+                          <span style={{background:badge.bg,color:badge.color,fontSize:11,fontWeight:700,padding:"2px 9px",borderRadius:10,whiteSpace:"nowrap"}}>{badge.label}</span>
+                          <span style={{background:"#4c1d95",color:"#c4b5fd",fontSize:11,fontWeight:600,padding:"2px 9px",borderRadius:10,whiteSpace:"nowrap"}}>Fully Funded</span>
+                        </div>
+                        <div style={{fontSize:15,fontWeight:700,color:"#f9fafb",marginBottom:4,lineHeight:1.35}}>{p.name}</div>
+                        <div style={{fontSize:12,color:"#9ca3af",marginBottom:6}}>{p.field}</div>
+                        <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+                          <span style={{fontSize:12,color:"#6b7280"}}>🌍 {p.countries}</span>
+                          {p.opens&&<span style={{fontSize:12,color:"#6b7280"}}>Opens: <strong style={{color:"#d1d5db"}}>{fmtDate(p.opens)}</strong></span>}
+                          {p.closes&&<span style={{fontSize:12,color:"#6b7280"}}>Closes: <strong style={{color:"#d1d5db"}}>{fmtDate(p.closes)}</strong></span>}
+                          {p.fee&&p.fee.toLowerCase()!=="none"&&<span style={{fontSize:12,color:"#6b7280"}}>Fee: <strong style={{color:"#d1d5db"}}>{p.fee}</strong></span>}
+                          {(p.fee==="None"||!p.fee)&&<span style={{fontSize:12,color:"#4ade80"}}>No app fee</span>}
+                        </div>
+                      </div>
+                      <span style={{color:"#6b7280",fontSize:18,flexShrink:0,marginTop:2}}>{expanded?"▲":"▼"}</span>
+                    </div>
+                    {expanded&&<div style={{borderTop:`1px solid ${BORDER}`,padding:"16px 20px",display:"flex",flexDirection:"column",gap:14}}>
+                      {p.requirements&&<div>
+                        <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:5}}>Admission Requirements</div>
+                        <div style={{fontSize:13,color:"#d1d5db",lineHeight:1.6}}>{p.requirements}</div>
+                      </div>}
+                      {p.consortium&&<div>
+                        <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:5}}>Consortium Universities</div>
+                        <div style={{fontSize:13,color:"#d1d5db",lineHeight:1.6}}>{p.consortium}</div>
+                      </div>}
+                      <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
+                        {p.english&&<div>
+                          <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:3}}>English Requirement</div>
+                          <div style={{fontSize:13,color:p.english.startsWith("Yes")?"#4ade80":"#f9fafb"}}>{p.english}</div>
+                        </div>}
+                        {p.fee&&<div>
+                          <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:3}}>Application Fee</div>
+                          <div style={{fontSize:13,color:p.fee==="None"?"#4ade80":"#f9fafb"}}>{p.fee}</div>
+                        </div>}
+                      </div>
+                      {p.howToApply&&<div>
+                        <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:5}}>How to Apply</div>
+                        <div style={{fontSize:13,color:"#d1d5db",lineHeight:1.6}}>{p.howToApply}</div>
+                      </div>}
+                      {p.notes&&<div>
+                        <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:5}}>Notes</div>
+                        <div style={{fontSize:13,color:"#9ca3af",lineHeight:1.6}}>{p.notes}</div>
+                      </div>}
+                      {p.link&&<a href={p.link} target="_blank" rel="noreferrer" style={{display:"inline-block",background:BLUE,color:"#fff",fontWeight:700,fontSize:13,padding:"9px 20px",borderRadius:6,textDecoration:"none",fontFamily:"Arial,sans-serif",alignSelf:"flex-start"}}>Apply / Programme Website →</a>}
+                    </div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>;
+        })()}
 
       </div>
     </div>
@@ -1087,109 +1183,6 @@ export default function App(){
         </div>
       </div>;
     })()}
-        {view==="erasmus"&&(()=>{
-          const today=new Date(); today.setHours(0,0,0,0);
-          const parseEMDate=s=>{if(!s)return null;const d=new Date(s);return isNaN(d)?null:d;};
-          const fmtDate=s=>{const d=parseEMDate(s);if(!d)return s||"";return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});};
-          const emStatus_badge=prog=>{
-            const o=parseEMDate(prog.opens), c=parseEMDate(prog.closes);
-            if(o&&c){if(today>=o&&today<=c)return{label:"Open Now",bg:"#14532d",color:"#4ade80"};if(today<o)return{label:"Opening Soon",bg:"#451a03",color:"#fb923c"};}
-            if(c&&today>c)return{label:"Closed",bg:"#1f2937",color:"#6b7280"};
-            return{label:"Check Dates",bg:"#1e3a5f",color:"#60a5fa"};
-          };
-          const emCountries=[...new Set(erasmusMundus.flatMap(p=>p.countries.split(",").map(c=>c.trim()).filter(Boolean)))].sort();
-          const filtered=erasmusMundus.filter(p=>{
-            if(emSearch){
-              const q=emSearch.toLowerCase();
-              if(!p.field.toLowerCase().includes(q)&&!p.name.toLowerCase().includes(q)) return false;
-            }
-            if(emCountry&&!p.countries.toLowerCase().includes(emCountry.toLowerCase())) return false;
-            if(emStatus==="open"){const b=emStatus_badge(p);if(b.label!=="Open Now")return false;}
-            if(emStatus==="soon"){const b=emStatus_badge(p);if(b.label!=="Opening Soon")return false;}
-            return true;
-          });
-          const toggleExpand=i=>sEmExpanded(s=>{const n=new Set(s);n.has(i)?n.delete(i):n.add(i);return n;});
-          return <div>
-            {/* Filters */}
-            <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"14px 18px",marginBottom:20}}>
-              <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
-                <input value={emSearch} onChange={e=>sEmSearch(e.target.value)} placeholder="Search by field (e.g. health, engineering, law…)" style={{flex:"1 1 220px",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"9px 14px",color:"#f9fafb",fontSize:13,outline:"none",fontFamily:"Arial,sans-serif"}}/>
-                <select value={emCountry} onChange={e=>sEmCountry(e.target.value)} style={{flex:"0 1 170px",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"9px 12px",color:"#f9fafb",fontSize:13,outline:"none",fontFamily:"Arial,sans-serif"}}>
-                  <option value="">All Countries</option>
-                  {emCountries.map(c=><option key={c} value={c}>{c}</option>)}
-                </select>
-                <select value={emStatus} onChange={e=>sEmStatus(e.target.value)} style={{flex:"0 1 160px",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"9px 12px",color:"#f9fafb",fontSize:13,outline:"none",fontFamily:"Arial,sans-serif"}}>
-                  <option value="all">All Statuses</option>
-                  <option value="open">Open Now</option>
-                  <option value="soon">Opening Soon</option>
-                </select>
-                {(emSearch||emCountry||emStatus!=="all")&&<button onClick={()=>{sEmSearch("");sEmCountry("");sEmStatus("all");}} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"9px 14px",color:"#6b7280",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕ Clear</button>}
-              </div>
-              <div style={{marginTop:10,fontSize:12,color:"#4b5563"}}>Showing <strong style={{color:"#f9fafb"}}>{filtered.length}</strong> of {erasmusMundus.length} programmes · All fully funded (Erasmus Mundus scholarship)</div>
-            </div>
-            {/* Cards */}
-            {filtered.length===0&&<div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"40px",textAlign:"center",color:"#6b7280",fontSize:13}}>No programmes match your filters.</div>}
-            <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              {filtered.map((p,i)=>{
-                const badge=emStatus_badge(p);
-                const expanded=emExpanded.has(i);
-                return(
-                  <div key={i} style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,overflow:"hidden"}}>
-                    {/* Card header — always visible */}
-                    <div onClick={()=>toggleExpand(i)} style={{padding:"16px 20px",cursor:"pointer",display:"flex",gap:16,alignItems:"flex-start"}}>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:6}}>
-                          <span style={{background:badge.bg,color:badge.color,fontSize:11,fontWeight:700,padding:"2px 9px",borderRadius:10,whiteSpace:"nowrap"}}>{badge.label}</span>
-                          <span style={{background:"#4c1d95",color:"#c4b5fd",fontSize:11,fontWeight:600,padding:"2px 9px",borderRadius:10,whiteSpace:"nowrap"}}>Fully Funded</span>
-                        </div>
-                        <div style={{fontSize:15,fontWeight:700,color:"#f9fafb",marginBottom:4,lineHeight:1.35}}>{p.name}</div>
-                        <div style={{fontSize:12,color:"#9ca3af",marginBottom:6}}>{p.field}</div>
-                        <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-                          <span style={{fontSize:12,color:"#6b7280"}}>🌍 {p.countries}</span>
-                          {p.opens&&<span style={{fontSize:12,color:"#6b7280"}}>Opens: <strong style={{color:"#d1d5db"}}>{fmtDate(p.opens)}</strong></span>}
-                          {p.closes&&<span style={{fontSize:12,color:"#6b7280"}}>Closes: <strong style={{color:"#d1d5db"}}>{fmtDate(p.closes)}</strong></span>}
-                          {p.fee&&p.fee.toLowerCase()!=="none"&&<span style={{fontSize:12,color:"#6b7280"}}>Fee: <strong style={{color:"#d1d5db"}}>{p.fee}</strong></span>}
-                          {(p.fee==="None"||!p.fee)&&<span style={{fontSize:12,color:"#4ade80"}}>No app fee</span>}
-                        </div>
-                      </div>
-                      <span style={{color:"#6b7280",fontSize:18,flexShrink:0,marginTop:2}}>{expanded?"▲":"▼"}</span>
-                    </div>
-                    {/* Expanded details */}
-                    {expanded&&<div style={{borderTop:`1px solid ${BORDER}`,padding:"16px 20px",display:"flex",flexDirection:"column",gap:14}}>
-                      {p.requirements&&<div>
-                        <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:5}}>Admission Requirements</div>
-                        <div style={{fontSize:13,color:"#d1d5db",lineHeight:1.6}}>{p.requirements}</div>
-                      </div>}
-                      {p.consortium&&<div>
-                        <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:5}}>Consortium Universities</div>
-                        <div style={{fontSize:13,color:"#d1d5db",lineHeight:1.6}}>{p.consortium}</div>
-                      </div>}
-                      <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
-                        {p.english&&<div>
-                          <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:3}}>English Requirement</div>
-                          <div style={{fontSize:13,color:p.english.startsWith("Yes")?"#4ade80":"#f9fafb"}}>{p.english}</div>
-                        </div>}
-                        {p.fee&&<div>
-                          <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:3}}>Application Fee</div>
-                          <div style={{fontSize:13,color:p.fee==="None"?"#4ade80":"#f9fafb"}}>{p.fee}</div>
-                        </div>}
-                      </div>
-                      {p.howToApply&&<div>
-                        <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:5}}>How to Apply</div>
-                        <div style={{fontSize:13,color:"#d1d5db",lineHeight:1.6}}>{p.howToApply}</div>
-                      </div>}
-                      {p.notes&&<div>
-                        <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:5}}>Notes</div>
-                        <div style={{fontSize:13,color:"#9ca3af",lineHeight:1.6}}>{p.notes}</div>
-                      </div>}
-                      {p.link&&<a href={p.link} target="_blank" rel="noreferrer" style={{display:"inline-block",background:BLUE,color:"#fff",fontWeight:700,fontSize:13,padding:"9px 20px",borderRadius:6,textDecoration:"none",fontFamily:"Arial,sans-serif",alignSelf:"flex-start"}}>Apply / Programme Website →</a>}
-                    </div>}
-                  </div>
-                );
-              })}
-            </div>
-          </div>;
-        })()}
 
     {editApp&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial,sans-serif"}}>
       <div style={{background:"#0f1923",border:`1px solid ${BORDER}`,borderRadius:14,padding:"32px",width:460,maxWidth:"90vw"}}>
