@@ -37,7 +37,14 @@ const parseRaw=(raw)=>{
   const opportunities = oppRows.map(r=>({
     school:String(r[0]||"").trim(), country:String(r[1]||"").trim(), programme:String(r[2]||"").trim(), level:String(r[3]||"").trim(), type:String(r[4]||"").trim(), tuition:String(r[5]||"").trim(), fee:String(r[6]||"").trim(), period:String(r[7]||"").trim(), english:String(r[8]||"").trim(), appNotes:String(r[9]||"").trim(), spring:String(r[10]||"").trim(), link:String(r[11]||"").trim(), tuitionMin:Number(r[12])||0, tuitionMax:Number(r[13])||0, feeMin:Number(r[14])||0, feeMax:Number(r[15])||0,
   }));
-  return {applicants,applications:linked,opportunities};
+  const emRows = raw.erasmusMundus ? raw.erasmusMundus.slice(1).filter(r=>r[0]&&String(r[0]).trim()) : [];
+  const erasmusMundus = emRows.map(r=>({
+    name:String(r[0]||"").trim(), countries:String(r[1]||"").trim(), field:String(r[2]||"").trim(),
+    consortium:String(r[3]||"").trim(), opens:String(r[4]||"").trim(), closes:String(r[5]||"").trim(),
+    requirements:String(r[6]||"").trim(), english:String(r[7]||"").trim(), fee:String(r[8]||"").trim(),
+    howToApply:String(r[9]||"").trim(), link:String(r[10]||"").trim(), notes:String(r[11]||"").trim(),
+  }));
+  return {applicants,applications:linked,opportunities,erasmusMundus};
 };
 
 // Brand colors from Japaguys logo
@@ -269,6 +276,10 @@ export default function App(){
   const [slDownloading,sSlDownloading]=useState(false);
   const slPrintRef=useRef(null);
   const [refreshing,sRefreshing]=useState(false);
+  const [emSearch,sEmSearch]=useState("");
+  const [emCountry,sEmCountry]=useState("");
+  const [emStatus,sEmStatus]=useState("all");
+  const [emExpanded,sEmExpanded]=useState(new Set());
   const [openCountry,sOpenCountry]=useState("");
   const [openLevel,sOpenLevel]=useState("");
   const [openType,sOpenType]=useState("");
@@ -433,7 +444,7 @@ export default function App(){
     </div>
   );
 
-  const {applicants:allApplicants,applications:allApplications,opportunities=[]}=data;
+  const {applicants:allApplicants,applications:allApplications,opportunities=[],erasmusMundus=[]}=data;
   const applicants=allApplicants.filter(a=>a.season===season);
   const applications=allApplications.filter(a=>{
     if(a.season) return a.season===season;
@@ -557,12 +568,13 @@ export default function App(){
           <img src={LOGO} alt="JapaGuys" style={{height:32,marginBottom:4,mixBlendMode:"screen"}}/>
           <div style={{fontSize:11,color:"#4b5563",marginTop:6,letterSpacing:"0.05em"}}>Operations Dashboard</div>
         </div>
-        {[{id:"summary",icon:"⊞",label:"Overview"},{id:"clients",icon:"👥",label:"All Clients"},{id:"opportunities",icon:"🌍",label:"Opportunities"}].map(item=>(
-          <button key={item.id} onClick={()=>{sV(item.id);sSel(null);sS("");sMenu(false);sOppTab("browse");}}
+        {[{id:"summary",icon:"⊞",label:"Overview"},{id:"clients",icon:"👥",label:"All Clients"},{id:"opportunities",icon:"🌍",label:"Opportunities"},{id:"erasmus",icon:"🎓",label:"Erasmus Mundus"}].map(item=>(
+          <button key={item.id} onClick={()=>{sV(item.id);sSel(null);sS("");sMenu(false);sOppTab("browse");sEmSearch("");sEmCountry("");sEmStatus("all");sEmExpanded(new Set());}}
             style={{display:"flex",alignItems:"center",gap:10,padding:"11px 20px",background:navActive(item.id)?"#1a2740":"none",border:"none",borderLeft:navActive(item.id)?`3px solid ${BLUE}`:"3px solid transparent",color:navActive(item.id)?"#f9fafb":"#6b7280",cursor:"pointer",fontSize:13,fontWeight:navActive(item.id)?700:400,fontFamily:"Arial,sans-serif",textAlign:"left",width:"100%",letterSpacing:"0.01em"}}>
             <span style={{fontSize:14}}>{item.icon}</span>{item.label}
             {item.id==="clients"&&<span style={{marginLeft:"auto",fontSize:11,background:"#0d2d6b",color:"#93c5fd",padding:"1px 7px",borderRadius:10,fontWeight:700}}>{tc}</span>}
             {item.id==="opportunities"&&<span style={{marginLeft:"auto",fontSize:11,background:"#064e3b",color:"#34d399",padding:"1px 7px",borderRadius:10,fontWeight:700}}>{opportunities.length}</span>}
+            {item.id==="erasmus"&&<span style={{marginLeft:"auto",fontSize:11,background:"#4c1d95",color:"#c4b5fd",padding:"1px 7px",borderRadius:10,fontWeight:700}}>{(data?.erasmusMundus||[]).length}</span>}
           </button>
         ))}
         <div style={{marginTop:"auto",padding:"0 20px"}}>
@@ -590,7 +602,7 @@ export default function App(){
               <span style={{color:BLUE}}>{sel.id}</span>
             </div>}
             <div style={{fontSize:12,color:BLUE,fontWeight:700,letterSpacing:"0.08em",marginBottom:4,textTransform:"uppercase"}}>{gr}, {nm} 👋</div>
-            <div style={{fontSize:26,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"-0.01em"}}>{view==="summary"?`Overview - ${season} Intake`:view==="clients"?"All Clients":view==="opportunities"?"Opportunities":sel?.name||""}</div>
+            <div style={{fontSize:26,fontWeight:700,color:"#f9fafb",fontFamily:"Arial,sans-serif",letterSpacing:"-0.01em"}}>{view==="summary"?`Overview - ${season} Intake`:view==="clients"?"All Clients":view==="opportunities"?"Opportunities":view==="erasmus"?"Erasmus Mundus":sel?.name||""}</div>
           </div>
           <div className="topbar-right" style={{textAlign:"right",display:"flex",alignItems:"center",gap:16}}>
             <button onClick={refreshDashboard} disabled={refreshing} title="Sync latest data from Google Sheets" style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"8px 14px",color:refreshing?"#4b5563":"#9ca3af",fontSize:13,cursor:refreshing?"default":"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:6,transition:"all 0.2s"}}>
@@ -604,8 +616,8 @@ export default function App(){
           </div>
         </div>
 
-        {/* ── SEASON TOGGLE ── hidden on opportunities */}
-        <div style={{display:view==="opportunities"?"none":"flex",alignItems:"center",justifyContent:"space-between",background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"12px 18px",marginBottom:22}}>
+        {/* ── SEASON TOGGLE ── hidden on opportunities + erasmus */}
+        <div style={{display:(view==="opportunities"||view==="erasmus")?"none":"flex",alignItems:"center",justifyContent:"space-between",background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"12px 18px",marginBottom:22}}>
           <div>
             <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:600,marginBottom:2}}>Application Season</div>
             <div style={{fontSize:13,color:"#9ca3af"}}>Showing data for <strong style={{color:"#f9fafb"}}>{season} Intake</strong></div>
@@ -1075,6 +1087,109 @@ export default function App(){
         </div>
       </div>;
     })()}
+        {view==="erasmus"&&(()=>{
+          const today=new Date(); today.setHours(0,0,0,0);
+          const parseEMDate=s=>{if(!s)return null;const d=new Date(s);return isNaN(d)?null:d;};
+          const emStatus_badge=prog=>{
+            const o=parseEMDate(prog.opens), c=parseEMDate(prog.closes);
+            if(o&&c){if(today>=o&&today<=c)return{label:"Open Now",bg:"#14532d",color:"#4ade80"};if(today<o)return{label:"Opening Soon",bg:"#451a03",color:"#fb923c"};}
+            if(c&&today>c)return{label:"Closed",bg:"#1f2937",color:"#6b7280"};
+            return{label:"Check Dates",bg:"#1e3a5f",color:"#60a5fa"};
+          };
+          const emCountries=[...new Set(erasmusMundus.flatMap(p=>p.countries.split(",").map(c=>c.trim()).filter(Boolean)))].sort();
+          const filtered=erasmusMundus.filter(p=>{
+            if(emSearch){
+              const q=emSearch.toLowerCase();
+              if(!p.field.toLowerCase().includes(q)&&!p.name.toLowerCase().includes(q)) return false;
+            }
+            if(emCountry&&!p.countries.toLowerCase().includes(emCountry.toLowerCase())) return false;
+            if(emStatus==="open"){const b=emStatus_badge(p);if(b.label!=="Open Now")return false;}
+            if(emStatus==="soon"){const b=emStatus_badge(p);if(b.label!=="Opening Soon")return false;}
+            return true;
+          });
+          const toggleExpand=i=>sEmExpanded(s=>{const n=new Set(s);n.has(i)?n.delete(i):n.add(i);return n;});
+          return <div>
+            {/* Filters */}
+            <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"14px 18px",marginBottom:20}}>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
+                <input value={emSearch} onChange={e=>sEmSearch(e.target.value)} placeholder="Search by field (e.g. health, engineering, law…)" style={{flex:"1 1 220px",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"9px 14px",color:"#f9fafb",fontSize:13,outline:"none",fontFamily:"Arial,sans-serif"}}/>
+                <select value={emCountry} onChange={e=>sEmCountry(e.target.value)} style={{flex:"0 1 170px",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"9px 12px",color:"#f9fafb",fontSize:13,outline:"none",fontFamily:"Arial,sans-serif"}}>
+                  <option value="">All Countries</option>
+                  {emCountries.map(c=><option key={c} value={c}>{c}</option>)}
+                </select>
+                <select value={emStatus} onChange={e=>sEmStatus(e.target.value)} style={{flex:"0 1 160px",background:BG,border:`1px solid ${BORDER}`,borderRadius:6,padding:"9px 12px",color:"#f9fafb",fontSize:13,outline:"none",fontFamily:"Arial,sans-serif"}}>
+                  <option value="all">All Statuses</option>
+                  <option value="open">Open Now</option>
+                  <option value="soon">Opening Soon</option>
+                </select>
+                {(emSearch||emCountry||emStatus!=="all")&&<button onClick={()=>{sEmSearch("");sEmCountry("");sEmStatus("all");}} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"9px 14px",color:"#6b7280",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕ Clear</button>}
+              </div>
+              <div style={{marginTop:10,fontSize:12,color:"#4b5563"}}>Showing <strong style={{color:"#f9fafb"}}>{filtered.length}</strong> of {erasmusMundus.length} programmes · All fully funded (Erasmus Mundus scholarship)</div>
+            </div>
+            {/* Cards */}
+            {filtered.length===0&&<div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"40px",textAlign:"center",color:"#6b7280",fontSize:13}}>No programmes match your filters.</div>}
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              {filtered.map((p,i)=>{
+                const badge=emStatus_badge(p);
+                const expanded=emExpanded.has(i);
+                return(
+                  <div key={i} style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,overflow:"hidden"}}>
+                    {/* Card header — always visible */}
+                    <div onClick={()=>toggleExpand(i)} style={{padding:"16px 20px",cursor:"pointer",display:"flex",gap:16,alignItems:"flex-start"}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:6}}>
+                          <span style={{background:badge.bg,color:badge.color,fontSize:11,fontWeight:700,padding:"2px 9px",borderRadius:10,whiteSpace:"nowrap"}}>{badge.label}</span>
+                          <span style={{background:"#4c1d95",color:"#c4b5fd",fontSize:11,fontWeight:600,padding:"2px 9px",borderRadius:10,whiteSpace:"nowrap"}}>Fully Funded</span>
+                        </div>
+                        <div style={{fontSize:15,fontWeight:700,color:"#f9fafb",marginBottom:4,lineHeight:1.35}}>{p.name}</div>
+                        <div style={{fontSize:12,color:"#9ca3af",marginBottom:6}}>{p.field}</div>
+                        <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+                          <span style={{fontSize:12,color:"#6b7280"}}>🌍 {p.countries}</span>
+                          {p.opens&&<span style={{fontSize:12,color:"#6b7280"}}>Opens: <strong style={{color:"#d1d5db"}}>{p.opens}</strong></span>}
+                          {p.closes&&<span style={{fontSize:12,color:"#6b7280"}}>Closes: <strong style={{color:"#d1d5db"}}>{p.closes}</strong></span>}
+                          {p.fee&&p.fee.toLowerCase()!=="none"&&<span style={{fontSize:12,color:"#6b7280"}}>Fee: <strong style={{color:"#d1d5db"}}>{p.fee}</strong></span>}
+                          {(p.fee==="None"||!p.fee)&&<span style={{fontSize:12,color:"#4ade80"}}>No app fee</span>}
+                        </div>
+                      </div>
+                      <span style={{color:"#6b7280",fontSize:18,flexShrink:0,marginTop:2}}>{expanded?"▲":"▼"}</span>
+                    </div>
+                    {/* Expanded details */}
+                    {expanded&&<div style={{borderTop:`1px solid ${BORDER}`,padding:"16px 20px",display:"flex",flexDirection:"column",gap:14}}>
+                      {p.requirements&&<div>
+                        <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:5}}>Admission Requirements</div>
+                        <div style={{fontSize:13,color:"#d1d5db",lineHeight:1.6}}>{p.requirements}</div>
+                      </div>}
+                      {p.consortium&&<div>
+                        <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:5}}>Consortium Universities</div>
+                        <div style={{fontSize:13,color:"#d1d5db",lineHeight:1.6}}>{p.consortium}</div>
+                      </div>}
+                      <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
+                        {p.english&&<div>
+                          <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:3}}>English Requirement</div>
+                          <div style={{fontSize:13,color:p.english.startsWith("Yes")?"#4ade80":"#f9fafb"}}>{p.english}</div>
+                        </div>}
+                        {p.fee&&<div>
+                          <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:3}}>Application Fee</div>
+                          <div style={{fontSize:13,color:p.fee==="None"?"#4ade80":"#f9fafb"}}>{p.fee}</div>
+                        </div>}
+                      </div>
+                      {p.howToApply&&<div>
+                        <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:5}}>How to Apply</div>
+                        <div style={{fontSize:13,color:"#d1d5db",lineHeight:1.6}}>{p.howToApply}</div>
+                      </div>}
+                      {p.notes&&<div>
+                        <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,marginBottom:5}}>Notes</div>
+                        <div style={{fontSize:13,color:"#9ca3af",lineHeight:1.6}}>{p.notes}</div>
+                      </div>}
+                      {p.link&&<a href={p.link} target="_blank" rel="noreferrer" style={{display:"inline-block",background:BLUE,color:"#fff",fontWeight:700,fontSize:13,padding:"9px 20px",borderRadius:6,textDecoration:"none",fontFamily:"Arial,sans-serif",alignSelf:"flex-start"}}>Apply / Programme Website →</a>}
+                    </div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>;
+        })()}
+
     {editApp&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial,sans-serif"}}>
       <div style={{background:"#0f1923",border:`1px solid ${BORDER}`,borderRadius:14,padding:"32px",width:460,maxWidth:"90vw"}}>
         <div style={{fontSize:18,fontWeight:700,color:"#f9fafb",marginBottom:4}}>Edit Application</div>
