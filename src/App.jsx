@@ -248,6 +248,7 @@ export default function App(){
   const [contactDate,sContactDate]=useState("");
   const [contactNotes,sContactNotes]=useState("");
   const [savingContact,sSavingContact]=useState(false);
+  const [countryModal,sCountryModal]=useState(null);
   const [editApp,sEditApp]=useState(null);
   const [editAppFields,sEditAppFields]=useState({ourProgress:"",schoolStatus:"",notes:""});
   const [savingApp,sSavingApp]=useState(false);
@@ -667,7 +668,7 @@ export default function App(){
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10}}>
               {countries.map(([country,info])=>(
-                <div key={country} style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:8,padding:"12px 14px"}}>
+                <div key={country} onClick={()=>sCountryModal(country)} style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:8,padding:"12px 14px",cursor:"pointer",transition:"border-color 0.15s"}} onMouseEnter={e=>e.currentTarget.style.borderColor=BLUE} onMouseLeave={e=>e.currentTarget.style.borderColor=BORDER}>
                   <div style={{fontSize:13,color:"#f9fafb",fontWeight:600,marginBottom:4}}>{country}</div>
                   <div style={{fontSize:22,fontWeight:700,color:BLUE}}>{info.total}</div>
                   <div style={{fontSize:11,color:"#6b7280"}}>applications</div>
@@ -1180,6 +1181,67 @@ export default function App(){
             </div>
           </div>}
           {visible.length===0&&slResult.length>0&&<div style={{background:"#fff",borderRadius:10,padding:"40px",textAlign:"center",color:"#6b7280",fontSize:13}}>All rows removed. Close and click Clear & Reset to start over.</div>}
+        </div>
+      </div>;
+    })()}
+
+    {countryModal&&(()=>{
+      const ctryApps=allApplications.filter(a=>a.country&&a.country.trim()===countryModal);
+      const clientIds=[...new Set(ctryApps.map(a=>a.clientId).filter(Boolean))];
+      const ctryClients=allApplicants.filter(a=>clientIds.includes(a.id));
+      return <div onClick={()=>sCountryModal(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial,sans-serif",padding:"20px"}}>
+        <div onClick={e=>e.stopPropagation()} style={{background:"#0a1520",border:`1px solid ${BORDER}`,borderRadius:14,width:"100%",maxWidth:760,maxHeight:"85vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          {/* Header */}
+          <div style={{padding:"20px 24px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+            <div>
+              <div style={{fontSize:18,fontWeight:700,color:"#f9fafb"}}>🌍 {countryModal}</div>
+              <div style={{fontSize:12,color:"#6b7280",marginTop:3}}>{ctryApps.length} application{ctryApps.length!==1?"s":""} · {ctryClients.length} client{ctryClients.length!==1?"s":""}</div>
+            </div>
+            <button onClick={()=>sCountryModal(null)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"6px 12px",color:"#9ca3af",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button>
+          </div>
+          {/* Body */}
+          <div style={{overflowY:"auto",padding:"20px 24px",display:"flex",flexDirection:"column",gap:24}}>
+            {/* Clients */}
+            {ctryClients.length>0&&<div>
+              <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:10}}>Clients</div>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {ctryClients.map(c=>(
+                  <div key={c.id} style={{background:"#060d14",border:`1px solid ${BORDER}`,borderRadius:8,padding:"12px 16px",display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+                    <div style={{flex:1,minWidth:140}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"#f9fafb"}}>{c.name}</div>
+                      <div style={{fontSize:12,color:"#6b7280",marginTop:2}}>{c.email||""}</div>
+                    </div>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                      {c.level&&<span style={{fontSize:11,background:"#1a2740",color:"#9ca3af",padding:"3px 9px",borderRadius:4,border:`1px solid ${BORDER}`}}>{c.level}</span>}
+                      {c.field&&<span style={{fontSize:11,background:"#1a2740",color:"#9ca3af",padding:"3px 9px",borderRadius:4,border:`1px solid ${BORDER}`}}>{c.field}</span>}
+                      {c.service&&<span style={{fontSize:11,background:c.service==="Done-For-You"?"#064e3b":"#0d2d6b",color:c.service==="Done-For-You"?"#34d399":"#93c5fd",padding:"3px 9px",borderRadius:4}}>{c.service}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>}
+            {/* Applications */}
+            <div>
+              <div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:10}}>Applications</div>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {ctryApps.map((a,i)=>(
+                  <div key={i} style={{background:"#060d14",border:`1px solid ${BORDER}`,borderRadius:8,padding:"12px 16px"}}>
+                    <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+                      <div style={{flex:1,minWidth:160}}>
+                        <div style={{fontSize:13,fontWeight:700,color:"#f9fafb"}}>{a.university}</div>
+                        <div style={{fontSize:12,color:"#6b7280",marginTop:2}}>{a.clientName}{a.programme?` · ${a.programme}`:""}</div>
+                      </div>
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap",flexShrink:0}}>
+                        {a.season&&<span style={{fontSize:11,background:"#1a2740",color:"#9ca3af",padding:"3px 9px",borderRadius:4,border:`1px solid ${BORDER}`}}>{a.season}</span>}
+                        {a.ourProgress&&<span style={{fontSize:11,background:a.ourProgress==="Submitted"?"#064e3b":a.ourProgress==="Not Started"?"#1a2740":"#451a03",color:a.ourProgress==="Submitted"?"#34d399":a.ourProgress==="Not Started"?"#6b7280":"#fb923c",padding:"3px 9px",borderRadius:4}}>{a.ourProgress}</span>}
+                        {a.schoolStatus&&a.schoolStatus!=="No Status Yet"&&<span style={{fontSize:11,background:a.schoolStatus==="Admission Granted"?"#064e3b":a.schoolStatus==="Admission Denied"?"#450a0a":"#1a2740",color:a.schoolStatus==="Admission Granted"?"#34d399":a.schoolStatus==="Admission Denied"?"#f87171":"#9ca3af",padding:"3px 9px",borderRadius:4}}>{a.schoolStatus}</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>;
     })()}
