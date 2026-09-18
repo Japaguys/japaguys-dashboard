@@ -1233,9 +1233,9 @@ export default function App(){
     })()}
 
     {countryModal&&(()=>{
-      const ctryApps=allApplications.filter(a=>a.country&&a.country.trim()===countryModal);
+      const ctryApps=applications.filter(a=>a.country&&a.country.trim()===countryModal);
       const clientIds=[...new Set(ctryApps.map(a=>a.clientId).filter(Boolean))];
-      const ctryClients=allApplicants.filter(a=>clientIds.includes(a.id));
+      const ctryClients=applicants.filter(a=>clientIds.includes(a.id));
       return <div onClick={()=>sCountryModal(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial,sans-serif",padding:"20px"}}>
         <div onClick={e=>e.stopPropagation()} style={{background:"#0a1520",border:`1px solid ${BORDER}`,borderRadius:14,width:"100%",maxWidth:760,maxHeight:"85vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
           {/* Header */}
