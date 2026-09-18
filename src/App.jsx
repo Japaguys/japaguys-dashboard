@@ -208,7 +208,7 @@ const parseDeadline = (period) => {
 
 
 const Bdg = ({l,m})=>{ const s=(m&&m[l])||{bg:"#1f2937",color:"#9ca3af",border:"#4b5563"}; return <span style={{background:s.bg,color:s.color,border:`1px solid ${s.border}`,borderRadius:4,padding:"3px 10px",fontSize:11,fontWeight:600,whiteSpace:"nowrap",display:"inline-block",letterSpacing:"0.02em"}}>{l||"N/A"}</span>; };
-const MC = ({label,value,accent,sub})=><div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"18px 20px",borderTop:`3px solid ${accent}`}}><div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8,fontWeight:600}}>{label}</div><div style={{fontSize:28,fontWeight:700,color:accent,fontFamily:"Arial,sans-serif",lineHeight:1}}>{value}</div>{sub&&<div style={{fontSize:11,color:"#4b5563",marginTop:4}}>{sub}</div>}</div>;
+const MC = ({label,value,accent,sub,onClick})=><div onClick={onClick} style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:"18px 20px",borderTop:`3px solid ${accent}`,cursor:onClick?"pointer":"default",transition:"opacity 0.15s"}} onMouseEnter={e=>{if(onClick)e.currentTarget.style.opacity="0.8";}} onMouseLeave={e=>{if(onClick)e.currentTarget.style.opacity="1";}}><div style={{fontSize:11,color:"#6b7280",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8,fontWeight:600}}>{label}</div><div style={{fontSize:28,fontWeight:700,color:accent,fontFamily:"Arial,sans-serif",lineHeight:1}}>{value}</div>{sub&&<div style={{fontSize:11,color:"#4b5563",marginTop:4}}>{sub}</div>}</div>;
 const PB = ({label,val,total,color})=><div style={{marginBottom:14}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}><span style={{fontSize:13,color:"#d1d5db"}}>{label}</span><span style={{fontSize:13,fontWeight:600,color}}>{val}</span></div><div style={{height:5,background:BORDER,borderRadius:3}}><div style={{height:5,background:color,borderRadius:3,width:`${total?(val/total*100):0}%`,transition:"width 0.8s"}}/></div></div>;
 
 function Login(){
@@ -249,6 +249,7 @@ export default function App(){
   const [contactNotes,sContactNotes]=useState("");
   const [savingContact,sSavingContact]=useState(false);
   const [countryModal,sCountryModal]=useState(null);
+  const [metricModal,sMetricModal]=useState(null);
   const [editApp,sEditApp]=useState(null);
   const [editAppFields,sEditAppFields]=useState({ourProgress:"",schoolStatus:"",notes:""});
   const [savingApp,sSavingApp]=useState(false);
@@ -635,15 +636,15 @@ export default function App(){
         {/* ── SUMMARY ── */}
         {view==="summary"&&<div>
           <div className="metric-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(148px,1fr))",gap:12,marginBottom:28}}>
-            <MC label="Total Clients"      value={tc}             accent={BLUE}/>
-            <MC label="Total Applications" value={tot}            accent="#3b82f6"/>
-            <MC label="Submitted"          value={sub}            accent="#10b981"/>
-            <MC label="Pending - Us"       value={pU}             accent="#f97316"/>
-            <MC label="Pending - Client"   value={pC}             accent="#f59e0b"/>
-            <MC label="Not Started"        value={nS}             accent="#6b7280"/>
-            <MC label="Admitted"           value={adm}            accent="#8b5cf6"/>
-            <MC label="Denied"             value={den}            accent="#ef4444"/>
-            <MC label="Outstanding"        value={"₦"+fmtNum(owed)} accent={BLUE} sub={"₦"+owed.toLocaleString()}/>
+            <MC label="Total Clients"      value={tc}             accent={BLUE}    onClick={()=>sMetricModal({type:"clients",items:applicants})}/>
+            <MC label="Total Applications" value={tot}            accent="#3b82f6" onClick={()=>sMetricModal({type:"applications",items:applications})}/>
+            <MC label="Submitted"          value={sub}            accent="#10b981" onClick={()=>sMetricModal({type:"applications",label:"Submitted",items:applications.filter(a=>a.ourProgress==="Submitted")})}/>
+            <MC label="Pending - Us"       value={pU}             accent="#f97316" onClick={()=>sMetricModal({type:"applications",label:"Pending — Us",items:applications.filter(a=>a.ourProgress==="Pending - Japaguys")})}/>
+            <MC label="Pending - Client"   value={pC}             accent="#f59e0b" onClick={()=>sMetricModal({type:"applications",label:"Pending — Client",items:applications.filter(a=>a.ourProgress==="Pending - Applicant")})}/>
+            <MC label="Not Started"        value={nS}             accent="#6b7280" onClick={()=>sMetricModal({type:"applications",label:"Not Started",items:applications.filter(a=>a.ourProgress==="Not Started")})}/>
+            <MC label="Admitted"           value={adm}            accent="#8b5cf6" onClick={()=>sMetricModal({type:"applications",label:"Admitted",items:applications.filter(a=>a.schoolStatus==="Admission Granted")})}/>
+            <MC label="Denied"             value={den}            accent="#ef4444" onClick={()=>sMetricModal({type:"applications",label:"Denied",items:applications.filter(a=>a.schoolStatus==="Admission Denied")})}/>
+            <MC label="Outstanding"        value={"₦"+fmtNum(owed)} accent={BLUE} sub={"₦"+owed.toLocaleString()} onClick={()=>sMetricModal({type:"clients",label:"Outstanding Balance",items:applicants.filter(a=>a.outstanding>0)})}/>
           </div>
           <div className="chart-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:24}}>
             <div style={{background:BLUE_DARK,border:`1px solid ${BORDER}`,borderRadius:10,padding:22}}>
@@ -1181,6 +1182,52 @@ export default function App(){
             </div>
           </div>}
           {visible.length===0&&slResult.length>0&&<div style={{background:"#fff",borderRadius:10,padding:"40px",textAlign:"center",color:"#6b7280",fontSize:13}}>All rows removed. Close and click Clear & Reset to start over.</div>}
+        </div>
+      </div>;
+    })()}
+
+    {metricModal&&(()=>{
+      const isClients=metricModal.type==="clients";
+      const title=metricModal.label||(isClients?"All Clients":"All Applications");
+      const items=metricModal.items||[];
+      return <div onClick={()=>sMetricModal(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Arial,sans-serif",padding:"20px"}}>
+        <div onClick={e=>e.stopPropagation()} style={{background:"#0a1520",border:`1px solid ${BORDER}`,borderRadius:14,width:"100%",maxWidth:780,maxHeight:"85vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <div style={{padding:"20px 24px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+            <div>
+              <div style={{fontSize:18,fontWeight:700,color:"#f9fafb"}}>{title}</div>
+              <div style={{fontSize:12,color:"#6b7280",marginTop:3}}>{items.length} {isClients?"client":"application"}{items.length!==1?"s":""} · {season} Intake</div>
+            </div>
+            <button onClick={()=>sMetricModal(null)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:6,padding:"6px 12px",color:"#9ca3af",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕</button>
+          </div>
+          <div style={{overflowY:"auto",padding:"16px 24px",display:"flex",flexDirection:"column",gap:8}}>
+            {items.length===0&&<div style={{textAlign:"center",color:"#6b7280",padding:"40px",fontSize:13}}>No records.</div>}
+            {isClients?items.map(c=>(
+              <div key={c.id} style={{background:"#060d14",border:`1px solid ${BORDER}`,borderRadius:8,padding:"12px 16px",display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+                <div style={{flex:1,minWidth:140}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"#f9fafb"}}>{c.name}</div>
+                  <div style={{fontSize:12,color:"#6b7280",marginTop:2}}>{c.email||""}</div>
+                </div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                  {c.level&&<span style={{fontSize:11,background:"#1a2740",color:"#9ca3af",padding:"3px 9px",borderRadius:4,border:`1px solid ${BORDER}`}}>{c.level}</span>}
+                  {c.field&&<span style={{fontSize:11,background:"#1a2740",color:"#9ca3af",padding:"3px 9px",borderRadius:4,border:`1px solid ${BORDER}`}}>{c.field}</span>}
+                  {c.outstanding>0&&<span style={{fontSize:11,background:"#3d2e0a",color:"#fbbf24",padding:"3px 9px",borderRadius:4}}>₦{c.outstanding.toLocaleString()} owed</span>}
+                </div>
+              </div>
+            )):items.map((a,i)=>(
+              <div key={i} style={{background:"#060d14",border:`1px solid ${BORDER}`,borderRadius:8,padding:"12px 16px"}}>
+                <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+                  <div style={{flex:1,minWidth:160}}>
+                    <div style={{fontSize:13,fontWeight:700,color:"#f9fafb"}}>{a.university}</div>
+                    <div style={{fontSize:12,color:"#6b7280",marginTop:2}}>{a.clientName}{a.country?` · ${a.country}`:""}{a.programme?` · ${a.programme}`:""}</div>
+                  </div>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap",flexShrink:0}}>
+                    {a.ourProgress&&<span style={{fontSize:11,background:a.ourProgress==="Submitted"?"#064e3b":a.ourProgress==="Not Started"?"#1a2740":"#451a03",color:a.ourProgress==="Submitted"?"#34d399":a.ourProgress==="Not Started"?"#6b7280":"#fb923c",padding:"3px 9px",borderRadius:4}}>{a.ourProgress}</span>}
+                    {a.schoolStatus&&a.schoolStatus!=="No Status Yet"&&<span style={{fontSize:11,background:a.schoolStatus==="Admission Granted"?"#064e3b":a.schoolStatus==="Admission Denied"?"#450a0a":"#1a2740",color:a.schoolStatus==="Admission Granted"?"#34d399":a.schoolStatus==="Admission Denied"?"#f87171":"#9ca3af",padding:"3px 9px",borderRadius:4}}>{a.schoolStatus}</span>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>;
     })()}
