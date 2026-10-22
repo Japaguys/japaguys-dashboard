@@ -495,7 +495,7 @@ export default function App(){
       if(funding&&o.type!==funding) return false;
       if(maxTuition&&o.type!=="Fully Funded"&&o.tuitionMin>Number(maxTuition)) return false;
       if(maxFee&&o.feeMax>Number(maxFee)) return false;
-      if(programme.trim()&&!programme.split(",").map(p=>p.trim()).filter(Boolean).some(p=>matchesProgramme(o.programme,p))) return false;
+      if(programme.trim()&&!programme.split(",").map(p=>p.trim()).filter(Boolean).every(p=>matchesProgramme(o.programme,p))) return false;
       return true;
     });
     sSlResult(result);
